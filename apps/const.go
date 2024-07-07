@@ -14,3 +14,7 @@ const (
 	Header = "header"
 	Body   = "body"
 )
+
+var HeaderMaskingList = map[string]bool{
+	"Authorization": true,
+}

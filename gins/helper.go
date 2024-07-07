@@ -1,6 +1,8 @@
 package gins
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/witwoywhy/go-cores/apps"
@@ -23,4 +25,12 @@ func NewCoreLogFromCtx(ctx *gin.Context) logger.CoreLogger {
 		apps.TraceID: getIDByKey(apps.TraceID, ctx),
 		apps.SpanID:  getIDByKey(apps.SpanID, ctx),
 	})
+}
+
+func maskHeader(header http.Header) {
+	for k := range header {
+		if _, ok := apps.HeaderMaskingList[k]; ok {
+			header.Set(k, "MASKING")
+		}
+	}
 }

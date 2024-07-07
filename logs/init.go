@@ -37,4 +37,11 @@ func Init() {
 			},
 		),
 	)
+
+	if config.MaskingList != "" {
+		maskingList := strings.Split(config.MaskingList, "|")
+		for _, v := range maskingList {
+			MaskingList[v] = true
+		}
+	}
 }

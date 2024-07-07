@@ -32,6 +32,7 @@ func Log() gin.HandlerFunc {
 
 		request := ctx.Request
 		cloneHandler := request.Header.Clone()
+		maskHeader(cloneHandler)
 
 		requestBody := map[string]any{}
 		b, _ := io.ReadAll(request.Body)

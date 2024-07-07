@@ -25,13 +25,13 @@ func masking(m map[string]any) {
 			masking(v.(map[string]any))
 		case reflect.String:
 			if isKeyInList(k) {
-				m[k] = maskChar(v.(string))
+				m[k] = MaskChar(v.(string))
 			}
 		}
 	}
 }
 
-func maskChar(s string) string {
+func MaskChar(s string) string {
 	ln := utf8.RuneCountInString(s)
 	if ln < 3 {
 		return strings.Repeat(MaskingChar, ln)
