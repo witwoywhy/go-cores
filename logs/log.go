@@ -19,7 +19,7 @@ func New(info map[string]any) logger.Logger {
 	}
 }
 
-func NewCoreLoog(info map[string]any) logger.CoreLogger {
+func NewCoreLog(info map[string]any) logger.CoreLogger {
 	return &Log{
 		Information: info,
 	}
