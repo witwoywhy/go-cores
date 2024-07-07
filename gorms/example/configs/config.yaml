@@ -1,0 +1,21 @@
+db:
+  mysql:
+    driver: mysql
+    dsn:
+    host: localhost
+    port: 3306
+    username: root
+    password: root
+    database: witwoywhy
+    timeout: 1m
+    readTimeout: 1m
+    writeTimeout: 1m
+    maxIdleConns: 1
+    maxConns: 5
+    maxLifeTime: 1h
+  pg:
+    driver: pg
+    dsn: postgres://root:root@localhost:5432/witwoywhy
+    maxIdleConns: 1
+    maxConns: 5
+    maxLifeTime: 1h
