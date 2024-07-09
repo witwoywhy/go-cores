@@ -14,7 +14,7 @@ func getIDByKey(key string, ctx *gin.Context) string {
 	id := ctx.GetHeader(key)
 	if id == "" {
 		id = uuid.NewString()
-		ctx.Header(key, id)
+		ctx.Request.Header.Set(key, id)
 	}
 
 	return id
