@@ -27,6 +27,13 @@ func NewCoreLogFromCtx(ctx *gin.Context) logger.CoreLogger {
 	})
 }
 
+func NewLogFromCtx(ctx *gin.Context) logger.Logger {
+	return logs.NewCoreLog(map[string]any{
+		apps.TraceID: getIDByKey(apps.TraceID, ctx),
+		apps.SpanID:  getIDByKey(apps.SpanID, ctx),
+	})
+}
+
 func maskHeader(header http.Header) {
 	for k := range header {
 		if _, ok := apps.HeaderMaskingList[k]; ok {
