@@ -7,20 +7,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-const (
-	FileNameConfig      = "config"
-	FileExtensionConfig = "yaml"
-	PathConfig          = "./configs"
-)
-
-func Init(pathConfigs ...string) {
-	pathConfig := PathConfig
-	if len(pathConfigs) > 0 {
-		pathConfig = pathConfigs[0]
-	}
-
-	viper.SetConfigName(FileNameConfig)
-	viper.SetConfigType(FileExtensionConfig)
+func Init() {
+	viper.SetConfigName(fileNameConfig)
+	viper.SetConfigType(fileExtensionConfig)
 	viper.AddConfigPath(pathConfig)
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
