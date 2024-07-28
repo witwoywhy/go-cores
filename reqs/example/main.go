@@ -85,6 +85,7 @@ func updateUserById(l logger.Logger) {
 		SetBearerAuthToken("TOKEN").
 		SetHeader("X-TEST", "TEST").
 		SetHeader("X-API-KEY", "KEY").
+		SetPathParam("id", "001").
 		SetError(&err).
 		SetBody(body).
 		Do()
