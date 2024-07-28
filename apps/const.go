@@ -8,6 +8,9 @@ const (
 const (
 	StartInbound = "START INBOUND | %s | %s | %s"
 	EndInbound   = "END INBOUND | %v | %v | %s | %s"
+
+	StartOutbound = "START OUTBOUND | %s | %s"
+	EndOutbound   = "END OUTBOUND | %d | %s | %s"
 )
 
 const (

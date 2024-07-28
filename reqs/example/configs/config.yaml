@@ -1,0 +1,16 @@
+integrations:
+  getUsers:
+    baseUrl: http://172.19.64.1:3001
+    method: GET
+    url: /users
+    timeout: 10s
+  getUser:
+    baseUrl: http://172.19.64.1:3001
+    method: GET
+    url: /users/{id}
+    timeout: 10s
+  updateUser:
+    baseUrl: http://172.19.64.1:3001
+    method: POST
+    url: /users/{id}
+    timeout: 10s
