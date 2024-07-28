@@ -2,6 +2,7 @@ package logs
 
 import (
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,8 +28,9 @@ func NewCoreLog(info map[string]any) logger.CoreLogger {
 
 func NewSpanLog(l logger.Logger) logger.Logger {
 	ll := l.(*Log)
-	ll.Information[apps.SpanID] = uuid.NewString()
-	return ll
+	newLog := Log{Information: maps.Clone(ll.Information)}
+	newLog.Information[apps.SpanID] = uuid.NewString()
+	return &newLog
 }
 
 func NewSpanLogAction(l logger.Logger, action string) (logger.Logger, func()) {
