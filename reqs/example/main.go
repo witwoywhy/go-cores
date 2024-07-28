@@ -40,9 +40,9 @@ func getUsers(l logger.Logger) {
 		SetError(&err).
 		Do()
 	if resp.IsErrorState() {
-		l.Errorf("failed to get users: %v", err)
+		ll.Errorf("failed to get users: %v", err)
 	} else if resp.Error() != nil {
-		l.Errorf("failed to get users unknow error: %v", resp.Error())
+		ll.Errorf("failed to get users unknow error: %v", resp.Error())
 	}
 }
 
@@ -62,9 +62,9 @@ func getUsersById(l logger.Logger) {
 		SetError(&err).
 		Do()
 	if resp.IsErrorState() {
-		l.Errorf("failed to get user: %v", err)
+		ll.Errorf("failed to get user: %v", err)
 	} else if resp.Error() != nil {
-		l.Errorf("failed to get user unknow error: %v", resp.Error())
+		ll.Errorf("failed to get user unknow error: %v", resp.Error())
 	}
 }
 
@@ -89,9 +89,9 @@ func updateUserById(l logger.Logger) {
 		SetBody(body).
 		Do()
 	if resp.IsErrorState() {
-		l.Errorf("failed to update user: %v", err)
+		ll.Errorf("failed to update user: %v", err)
 	} else if resp.Error() != nil {
-		l.Errorf("failed to update user unknow error: %v", resp.Error())
+		ll.Errorf("failed to update user unknow error: %v", resp.Error())
 	}
 }
 
@@ -105,4 +105,5 @@ func main() {
 	getUsers(l)
 	getUsersById(l)
 	updateUserById(l)
+	l.Info("END")
 }
