@@ -3,33 +3,17 @@ package gorms
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	mysqld "github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
+	"github.com/witwoywhy/go-cores/dbs"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-type Config struct {
-	Driver       string        `mapstructure:"driver"`
-	Dsn          string        `mapstructure:"dsn"`
-	Host         string        `mapstructure:"host"`
-	Port         string        `mapstructure:"port"`
-	Username     string        `mapstructure:"username"`
-	Password     string        `mapstructure:"password"`
-	Database     string        `mapstructure:"database"`
-	Timeout      time.Duration `mapstructure:"timeout"`
-	ReadTimeout  time.Duration `mapstructure:"readTimeout"`
-	WriteTimeout time.Duration `mapstructure:"writeTimeout"`
-	MaxIdleConns int           `mapstructure:"maxIdleConns"`
-	MaxConns     int           `mapstructure:"maxConns"`
-	MaxLifeTime  time.Duration `mapstructure:"maxLifeTime"`
-}
-
 func Init(key string) *gorm.DB {
-	var config Config
+	var config dbs.DbConfig
 	if err := viper.UnmarshalKey(key, &config); err != nil {
 		panic(fmt.Errorf("failed to loaded config db %s: %v", key, err))
 	}
