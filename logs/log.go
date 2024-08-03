@@ -54,9 +54,15 @@ func (l *Log) Debugf(format string, obj ...any) {
 	SL.Debug("", args...)
 }
 
-func (l *Log) Error(err error) {
+func (l *Log) Error(err any) {
 	args := infoToArgs(l.Information)
-	args = append(args, Message, err.Error())
+	switch v := err.(type) {
+	case error:
+		args = append(args, Message, v.Error())
+	default:
+		args = append(args, Message, v)
+	}
+
 	SL.Error("", args...)
 }
 

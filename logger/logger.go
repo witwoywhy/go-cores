@@ -4,7 +4,7 @@ type Logger interface {
 	Info(obj any)
 	Debug(obj any)
 	Warn(obj any)
-	Error(err error)
+	Error(err any)
 
 	Infof(format string, obj ...any)
 	Debugf(format string, obj ...any)
