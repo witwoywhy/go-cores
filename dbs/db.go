@@ -1,6 +1,9 @@
 package dbs
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type DbConfig struct {
 	Driver       string        `mapstructure:"driver"`
@@ -16,4 +19,15 @@ type DbConfig struct {
 	MaxIdleConns int           `mapstructure:"maxIdleConns"`
 	MaxConns     int           `mapstructure:"maxConns"`
 	MaxLifeTime  time.Duration `mapstructure:"maxLifeTime"`
+}
+
+func (d *DbConfig) ToDsn() string {
+	switch d.Driver {
+	case Pg:
+		return d.Dsn
+	case Mysql:
+		return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", d.Username, d.Password, d.Host, d.Port, d.Database)
+	default:
+		panic("failed to get db driver")
+	}
 }

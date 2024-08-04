@@ -21,9 +21,9 @@ func Init(key string) *gorm.DB {
 	var gormDb *gorm.DB
 	var err error
 	switch strings.ToLower(config.Driver) {
-	case "pg":
+	case dbs.Pg:
 		gormDb, err = gorm.Open(postgres.New(postgres.Config{DSN: config.Dsn}))
-	case "mysql":
+	case dbs.Mysql:
 		mysqlConfig := mysql.Config{}
 		if config.Dsn != "" {
 			mysqlConfig.DSN = config.Dsn
@@ -42,7 +42,7 @@ func Init(key string) *gorm.DB {
 		}
 		gormDb, err = gorm.Open(mysql.New(mysqlConfig))
 	default:
-		panic(fmt.Errorf("failed to get db driver: %v", err))
+		panic("failed to get db driver")
 	}
 	if err != nil {
 		panic(fmt.Errorf("failed to open db %s: %v", key, err))
