@@ -14,11 +14,9 @@ func Error() gin.HandlerFunc {
 		for _, err := range ctx.Errors {
 			if e, ok := err.Err.(errs.Error); !ok {
 				ctx.AbortWithStatusJSON(http.StatusInternalServerError, errs.NewInternalError())
-				return
 			} else {
-				ctx.AbortWithStatusJSON(e.Status(), e)
+				ctx.AbortWithStatusJSON(e.HttpStatus(), e)
 			}
-
 		}
 	}
 }
