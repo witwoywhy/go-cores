@@ -8,6 +8,7 @@ import (
 
 	"github.com/imroc/req/v3"
 	"github.com/witwoywhy/go-cores/apps"
+	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/logger"
 	"github.com/witwoywhy/go-cores/logs"
 )
@@ -25,6 +26,7 @@ type Request interface {
 	SetError(err interface{}) Request
 	SetBody(body interface{}) Request
 	SetResult(result interface{}) Request
+	WithRouteContext(rctx *contexts.RouteContext) Request
 	Do() Response
 }
 
@@ -165,4 +167,15 @@ func (r *request) Do() Response {
 	}
 
 	return response
+}
+
+const authorization = "Authorization"
+
+func (r *request) WithRouteContext(rctx *contexts.RouteContext) Request {
+	r.SetHeaders(map[string]string{
+		authorization: rctx.Authorization,
+		apps.TraceID:  rctx.TraceId,
+		apps.SpanID:   rctx.SpanId,
+	})
+	return r
 }

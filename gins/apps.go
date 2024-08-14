@@ -5,12 +5,16 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/witwoywhy/go-cores/contexts"
+	"github.com/witwoywhy/go-cores/errs"
 	"github.com/witwoywhy/go-cores/logs"
 )
 
 type GinApps interface {
 	Register(method string, relativePath string, handlers ...gin.HandlerFunc)
 	UseMiddleware(middleware ...gin.HandlerFunc)
+	WithParseRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc
+	WithParseLogger(handle HandleWithLogger) gin.HandlerFunc
 	ListenAndServe(addr string)
 }
 
@@ -53,4 +57,32 @@ func (a *app) Register(method string, relativePath string, handlers ...gin.Handl
 
 func (a *app) UseMiddleware(middleware ...gin.HandlerFunc) {
 	a.gin.Use(middleware...)
+}
+
+func (a *app) WithParseLogger(handle HandleWithLogger) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		l := NewLogFromCtx(ctx)
+
+		handle(ctx, l)
+	}
+}
+
+const (
+	rctx         = "rctx"
+	rctxNotFound = "route context not found"
+)
+
+func (a *app) WithParseRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		l := NewLogFromCtx(ctx)
+
+		routeContext, ok := ctx.Get(rctx)
+		if !ok {
+			l.Error("rctx not found")
+			ctx.Error(errs.NewCustom(http.StatusInternalServerError, errs.Err50000, rctxNotFound, ""))
+			ctx.Abort()
+		}
+
+		handle(ctx, routeContext.(*contexts.RouteContext), l)
+	}
 }
