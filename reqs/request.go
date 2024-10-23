@@ -63,7 +63,7 @@ func (r *request) AddQueryParams(key string, values ...string) Request {
 }
 
 func (r *request) SetBody(body interface{}) Request {
-	r.request.SetBody(body)
+	r.request.SetBodyJsonMarshal(body)
 	return r
 }
 
@@ -137,7 +137,7 @@ func (r *request) Do() Response {
 		return response
 	}
 
-	if r.l != nil {
+	if r.l != nil && doResponse != nil {
 		mapResponseBody := map[string]any{
 			logs.Message: fmt.Sprintf(apps.EndOutbound, doResponse.StatusCode, doResponse.TotalTime(), r.request.URL.String()),
 		}
