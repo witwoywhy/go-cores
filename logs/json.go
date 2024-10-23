@@ -28,7 +28,7 @@ func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
 	fields := map[string]any{
 		"timestamp": r.Time.UnixNano(),
 		"datetime":  r.Time.Format(time.RFC3339Nano),
-		"level":     r.Level,
+		"severity":  r.Level,
 	}
 
 	r.Attrs(func(a slog.Attr) bool {
@@ -50,7 +50,7 @@ func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
 			fields[a.Key] = m
 			return true
 		}
-		fields[a.Key] =a.Value.Any()
+		fields[a.Key] = a.Value.Any()
 		return true
 	})
 
