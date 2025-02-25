@@ -35,6 +35,7 @@ func (a *app) ListenAndServe(addr string) {
 		defer wg.Done()
 		if err := http.ListenAndServe(addr, a.gin); err != nil {
 			logs.L.Error(err)
+			panic(err)
 		}
 	}()
 	wg.Wait()
