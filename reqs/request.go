@@ -3,6 +3,7 @@ package reqs
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -25,6 +26,8 @@ type Request interface {
 	SetBasicAuth(username, password string) Request
 	SetError(err interface{}) Request
 	SetBody(body interface{}) Request
+	SetFormData(data map[string]interface{}) Request
+	SetFileReader(paramName, filename string, reader io.Reader) Request
 	SetResult(result interface{}) Request
 	WithRouteContext(rctx *contexts.RouteContext) Request
 	Do() Response
@@ -64,6 +67,16 @@ func (r *request) AddQueryParams(key string, values ...string) Request {
 
 func (r *request) SetBody(body interface{}) Request {
 	r.request.SetBodyJsonMarshal(body)
+	return r
+}
+
+func (r *request) SetFormData(data map[string]interface{}) Request {
+	r.request.SetFormDataAnyType(data)
+	return r
+}
+
+func (r *request) SetFileReader(paramName, filename string, reader io.Reader) Request {
+	r.request.SetFileReader(paramName, filename, reader)
 	return r
 }
 

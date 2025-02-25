@@ -35,6 +35,24 @@ func NewClient(key string) Client {
 	return &c
 }
 
+func NewClientWithConfig(config Config) Client {
+	c := client{
+		client: req.NewClient(),
+		config: &config,
+	}
+
+	if config.EnableInsecureSkipVerify {
+		c.client.EnableInsecureSkipVerify()
+	}
+
+	c.client.BaseURL = config.BaseUrl
+	if config.Timeout != 0 {
+		c.client.SetTimeout(config.Timeout)
+	}
+
+	return &c
+}
+
 func (c *client) Request() Request {
 	request := request{
 		request: c.client.NewRequest(),
