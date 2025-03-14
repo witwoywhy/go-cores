@@ -20,6 +20,6 @@ func Init() {
 
 	for _, key := range viper.AllKeys() {
 		value := viper.Get(key)
-		viper.SetDefault(key, value)
+		viper.Set(key, value)
 	}
 }
