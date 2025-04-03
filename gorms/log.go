@@ -9,12 +9,24 @@ import (
 )
 
 type gormLog struct {
-	l ll.Logger
+	l   ll.Logger
+	opt GormLogOption
 }
 
-func NewGormLog(l ll.Logger) logger.Interface {
+type GormLogOption struct {
+	IsLogSql bool
+}
+
+func NewGormLog(l ll.Logger, opt ...GormLogOption) logger.Interface {
+	var option GormLogOption
+
+	if len(opt) > 0 {
+		option = opt[0]
+	}
+
 	return &gormLog{
-		l: l,
+		l:   l,
+		opt: option,
 	}
 }
 
@@ -43,5 +55,10 @@ func (g *gormLog) Trace(
 	g.l.Info(StartOutbound)
 	sql, _ := fc()
 	since := time.Since(begin)
+
+	if g.opt.IsLogSql {
+		g.l.Infof("GORM SQL: %v", sql)
+	}
+
 	g.l.Infof(EndOutbound, since, getTableNameFromQuery(sql))
 }
