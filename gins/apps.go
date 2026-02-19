@@ -1,8 +1,12 @@
 package gins
 
 import (
+	"context"
 	"net/http"
-	"sync"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/witwoywhy/go-cores/contexts"
@@ -15,7 +19,7 @@ type GinApps interface {
 	UseMiddleware(middleware ...gin.HandlerFunc)
 	WithParseRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc
 	WithParseLogger(handle HandleWithLogger) gin.HandlerFunc
-	ListenAndServe(addr string)
+	ListenAndServe(addr string, closeFunc func())
 }
 
 type app struct {
@@ -28,17 +32,40 @@ func New() GinApps {
 	}
 }
 
-func (a *app) ListenAndServe(addr string) {
-	var wg sync.WaitGroup
-	wg.Add(1)
+func (a *app) ListenAndServe(addr string, closeFunc func()) {
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: a.gin,
+	}
+
 	go func() {
-		defer wg.Done()
-		if err := http.ListenAndServe(addr, a.gin); err != nil {
-			logs.L.Error(err)
+		logs.L.Infof("Listen: %s", addr)
+
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logs.L.Errorf("listen error: %v", err)
 			panic(err)
 		}
 	}()
-	wg.Wait()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logs.L.Info("start shutdown service ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logs.L.Errorf("shutdown service error: %v", err)
+	}
+
+	<-ctx.Done()
+
+	if closeFunc != nil {
+		closeFunc()
+	}
+
+	logs.L.Info("service shutdown")
 }
 
 func (a *app) Register(method string, relativePath string, handlers ...gin.HandlerFunc) {
