@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/witwoywhy/go-cores/apps"
+	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/logs"
 )
 
@@ -59,5 +60,12 @@ func Log() gin.HandlerFunc {
 			apps.Body:    responseBody,
 			logs.Message: fmt.Sprintf(apps.EndInbound, writer.Status(), time.Since(now), request.Method, request.URL.Path),
 		})
+	}
+}
+
+func MakeDefaultRouteContext() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.Set(rctx, &contexts.RouteContext{})
+		ctx.Next()
 	}
 }
