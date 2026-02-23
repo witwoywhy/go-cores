@@ -10,11 +10,6 @@ type Logger interface {
 	Debugf(format string, obj ...any)
 	Warnf(format string, obj ...any)
 	Errorf(format string, obj ...any)
-}
-
-type CoreLogger interface {
-	Logger
 
 	JSON(m map[string]any)
-	AddInformation(m map[string]any)
 }

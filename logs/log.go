@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"context"
 	"fmt"
 	"maps"
 	"time"
@@ -8,19 +9,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/witwoywhy/go-cores/apps"
 	"github.com/witwoywhy/go-cores/logger"
+	"go.opentelemetry.io/otel/attribute"
+	ot "go.opentelemetry.io/otel/trace"
 )
 
 type Log struct {
 	Information map[string]any
+
+	ctx  context.Context
+	span ot.Span
 }
 
 func New(info map[string]any) logger.Logger {
-	return &Log{
-		Information: info,
-	}
-}
-
-func NewCoreLog(info map[string]any) logger.CoreLogger {
 	return &Log{
 		Information: info,
 	}
@@ -39,6 +39,48 @@ func NewSpanLogAction(l logger.Logger, action string) (logger.Logger, func()) {
 	ll.Infof("START | %s", action)
 	return ll, func() {
 		ll.Infof("END | %s | %v", action, time.Since(now))
+	}
+}
+
+func NewTracer(
+	ctx context.Context,
+	trace ot.Tracer,
+	action string,
+) (logger.Logger, ot.Span) {
+	ctx, span := trace.Start(ctx, action)
+	span.SetAttributes(attribute.String(apps.TraceID, span.SpanContext().TraceID().String()))
+	span.SetAttributes(attribute.String(apps.SpanID, span.SpanContext().SpanID().String()))
+
+	l := &Log{
+		ctx:  ctx,
+		span: span,
+		Information: map[string]any{
+			apps.TraceID: span.SpanContext().TraceID().String(),
+			apps.SpanID:  span.SpanContext().SpanID().String(),
+		},
+	}
+
+	return l, span
+}
+
+func NewSpanTracer(l logger.Logger, action string) (logger.Logger, func()) {
+	ll := l.(*Log)
+	now := time.Now()
+
+	ctx, span := ll.span.TracerProvider().Tracer("").Start(ll.ctx, action)
+	span.SetAttributes(attribute.String(apps.TraceID, span.SpanContext().TraceID().String()))
+	span.SetAttributes(attribute.String(apps.SpanID, span.SpanContext().SpanID().String()))
+
+	newLog := &Log{Information: maps.Clone(ll.Information), ctx: ctx, span: span}
+	newLog.Information[apps.SpanID] = span.SpanContext().SpanID().String()
+
+	l = newLog
+	l.Infof("START | %s", action)
+	return l, func() {
+		since := time.Since(now)
+		span.SetAttributes(attribute.String("since", since.String()))
+		span.End()
+		l.Infof("END | %s | %v", action, since)
 	}
 }
 

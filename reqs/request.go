@@ -36,12 +36,12 @@ type Request interface {
 type request struct {
 	request *req.Request
 	config  *Config
-	l       logger.CoreLogger
+	l       logger.Logger
 }
 
 func (r *request) AddLogger(l logger.Logger) Request {
 	log := l.(*logs.Log)
-	r.l = logs.NewCoreLog(log.Information)
+	r.l = logs.New(log.Information)
 	return r
 }
 

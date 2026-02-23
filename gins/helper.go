@@ -8,7 +8,7 @@ import (
 	"github.com/witwoywhy/go-cores/logs"
 )
 
-func getIDByKey(key string, ctx *gin.Context) string {
+func GetIDByKey(key string, ctx *gin.Context) string {
 	id := ctx.GetHeader(key)
 	if id == "" {
 		id = uuid.NewString()
@@ -18,16 +18,16 @@ func getIDByKey(key string, ctx *gin.Context) string {
 	return id
 }
 
-func NewCoreLogFromCtx(ctx *gin.Context) logger.CoreLogger {
-	return logs.NewCoreLog(map[string]any{
-		apps.TraceID: getIDByKey(apps.TraceID, ctx),
-		apps.SpanID:  getIDByKey(apps.SpanID, ctx),
+func NewLogFromCtx(ctx *gin.Context) logger.Logger {
+	return logs.New(map[string]any{
+		apps.TraceID: GetIDByKey(apps.TraceID, ctx),
+		apps.SpanID:  GetIDByKey(apps.SpanID, ctx),
 	})
 }
 
-func NewLogFromCtx(ctx *gin.Context) logger.Logger {
-	return logs.NewCoreLog(map[string]any{
-		apps.TraceID: getIDByKey(apps.TraceID, ctx),
-		apps.SpanID:  getIDByKey(apps.SpanID, ctx),
-	})
-}
+// func NewLogWithTraceFromCtx(ctx *gin.Context) logger.Logger {
+// 	span, ok := ctx.Get("spanTracer")
+// 	if ok {
+
+// 	}
+// }

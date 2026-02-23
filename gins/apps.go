@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/errs"
+	"github.com/witwoywhy/go-cores/logger"
 	"github.com/witwoywhy/go-cores/logs"
 )
 
@@ -102,7 +103,14 @@ const (
 
 func (a *app) WithParseRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		l := NewLogFromCtx(ctx)
+		var l logger.Logger
+
+		ll, ok := ctx.Get("logger")
+		if !ok {
+			l = NewLogFromCtx(ctx)
+		} else {
+			l = ll.(logger.Logger)
+		}
 
 		routeContext, ok := ctx.Get(rctx)
 		if !ok {
