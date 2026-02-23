@@ -16,8 +16,8 @@ import (
 type Log struct {
 	Information map[string]any
 
-	ctx  context.Context
-	span ot.Span
+	Ctx  context.Context
+	Span ot.Span
 }
 
 func New(info map[string]any) logger.Logger {
@@ -33,12 +33,34 @@ func NewSpanLog(l logger.Logger) logger.Logger {
 	return &newLog
 }
 
-func NewSpanLogAction(l logger.Logger, action string) (logger.Logger, func()) {
+var NewSpanLogAction func(l logger.Logger, action string) (logger.Logger, func()) = func(l logger.Logger, action string) (logger.Logger, func()) {
 	now := time.Now()
 	ll := NewSpanLog(l)
 	ll.Infof("START | %s", action)
 	return ll, func() {
 		ll.Infof("END | %s | %v", action, time.Since(now))
+	}
+}
+
+func NewSpanLogActionTracer(l logger.Logger, action string) (logger.Logger, func()) {
+	ll := l.(*Log)
+	now := time.Now()
+
+	ctx, span := ll.Span.TracerProvider().Tracer("").Start(ll.Ctx, action)
+	span.SetAttributes(attribute.String(apps.TraceID, span.SpanContext().TraceID().String()))
+	span.SetAttributes(attribute.String(apps.SpanID, span.SpanContext().SpanID().String()))
+
+	newLog := &Log{Information: maps.Clone(ll.Information), Ctx: ctx, Span: span}
+	newLog.Information[apps.SpanID] = span.SpanContext().SpanID().String()
+
+	l = newLog
+	l.Infof("START | %s", action)
+
+	return l, func() {
+		since := time.Since(now)
+		span.SetAttributes(attribute.String("since", since.String()))
+		span.End()
+		l.Infof("END | %s | %v", action, since)
 	}
 }
 
@@ -52,8 +74,8 @@ func NewTracer(
 	span.SetAttributes(attribute.String(apps.SpanID, span.SpanContext().SpanID().String()))
 
 	l := &Log{
-		ctx:  ctx,
-		span: span,
+		Ctx:  ctx,
+		Span: span,
 		Information: map[string]any{
 			apps.TraceID: span.SpanContext().TraceID().String(),
 			apps.SpanID:  span.SpanContext().SpanID().String(),
@@ -61,27 +83,6 @@ func NewTracer(
 	}
 
 	return l, span
-}
-
-func NewSpanTracer(l logger.Logger, action string) (logger.Logger, func()) {
-	ll := l.(*Log)
-	now := time.Now()
-
-	ctx, span := ll.span.TracerProvider().Tracer("").Start(ll.ctx, action)
-	span.SetAttributes(attribute.String(apps.TraceID, span.SpanContext().TraceID().String()))
-	span.SetAttributes(attribute.String(apps.SpanID, span.SpanContext().SpanID().String()))
-
-	newLog := &Log{Information: maps.Clone(ll.Information), ctx: ctx, span: span}
-	newLog.Information[apps.SpanID] = span.SpanContext().SpanID().String()
-
-	l = newLog
-	l.Infof("START | %s", action)
-	return l, func() {
-		since := time.Since(now)
-		span.SetAttributes(attribute.String("since", since.String()))
-		span.End()
-		l.Infof("END | %s | %v", action, since)
-	}
 }
 
 func (l *Log) Debug(obj any) {

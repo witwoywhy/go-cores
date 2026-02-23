@@ -7,16 +7,17 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
+	"github.com/witwoywhy/go-cores/tracers"
+	"github.com/witwoywhy/go-cores/utils"
 )
 
 func Init() {
-	var config Config
-	if err := viper.UnmarshalKey("log", &config); err != nil {
+	if err := viper.UnmarshalKey("log", &LogConfig); err != nil {
 		panic(fmt.Errorf("failed to loaded log config: %v", err))
 	}
 
 	var level slog.Level
-	switch strings.ToLower(config.Level) {
+	switch strings.ToLower(LogConfig.Level) {
 	case "info":
 		level = slog.LevelInfo
 	case "debug":
@@ -38,10 +39,16 @@ func Init() {
 		),
 	)
 
-	if config.MaskingList != "" {
-		maskingList := strings.Split(config.MaskingList, "|")
+	if LogConfig.MaskingList != "" {
+		maskingList := strings.Split(LogConfig.MaskingList, "|")
 		for _, v := range maskingList {
 			MaskingList[v] = true
 		}
+	}
+
+	if LogConfig.TracerUrl != nil {
+		tracers.InitTracer(utils.NotNil(LogConfig.TracerUrl))
+		NewSpanLogAction = NewSpanLogActionTracer
+		LogConfig.IsEnableTracer = true
 	}
 }
