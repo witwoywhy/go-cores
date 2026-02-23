@@ -11,6 +11,7 @@ import (
 	"github.com/witwoywhy/go-cores/apps"
 	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/logs"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -99,6 +100,8 @@ func LogWithTracer(tc trace.Tracer) gin.HandlerFunc {
 		if len(writer.body.Bytes()) > 0 {
 			json.Unmarshal(writer.body.Bytes(), &responseBody)
 		}
+
+		span.SetAttributes(attribute.Int("httpStatus", writer.Status()))
 
 		l.JSON(map[string]any{
 			apps.Header:  writer.Header(),
