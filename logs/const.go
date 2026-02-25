@@ -3,6 +3,9 @@ package logs
 import (
 	"log/slog"
 	"os"
+
+	"github.com/google/uuid"
+	"github.com/witwoywhy/go-cores/apps"
 )
 
 var (
@@ -14,7 +17,10 @@ var (
 			},
 		),
 	)
-	L = New(map[string]any{})
+	L = New(map[string]any{
+		apps.TraceID: uuid.NewString(),
+		apps.SpanID:  uuid.NewString(),
+	})
 )
 
 const (

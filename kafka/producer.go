@@ -42,7 +42,7 @@ func NewProducer(key string) *Producer {
 	}
 }
 
-func (p *Producer) Publish(v any) error {
+func (p *Producer) Publish(key string, v any) error {
 	var b sarama.ByteEncoder
 	switch t := v.(type) {
 	case string:
@@ -58,6 +58,7 @@ func (p *Producer) Publish(v any) error {
 
 	_, _, err := p.Client.SendMessage(&sarama.ProducerMessage{
 		Topic: p.Topic,
+		Key:   sarama.StringEncoder(key),
 		Value: b,
 	})
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
+	"github.com/witwoywhy/go-cores/kafka"
 	"github.com/witwoywhy/go-cores/tracers"
 	"github.com/witwoywhy/go-cores/utils"
 )
@@ -30,15 +31,6 @@ func Init() {
 		level = slog.LevelInfo
 	}
 
-	SL = slog.New(
-		NewJsonHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: level,
-			},
-		),
-	)
-
 	if LogConfig.MaskingList != "" {
 		maskingList := strings.Split(LogConfig.MaskingList, "|")
 		for _, v := range maskingList {
@@ -50,5 +42,21 @@ func Init() {
 		tracers.InitTracer(utils.NotNil(LogConfig.TracerUrl))
 		NewSpanLogAction = NewSpanLogActionTracer
 		LogConfig.IsEnableTracer = true
+	}
+
+	if LogConfig.IsAsync {
+		SL = slog.New(
+			NewKafkaHandler(
+				kafka.NewProducer("log.producer"),
+				level,
+			),
+		)
+	} else {
+		SL = slog.New(NewJsonHandler(
+			os.Stdout,
+			&slog.HandlerOptions{
+				Level: level,
+			},
+		))
 	}
 }
