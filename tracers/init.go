@@ -3,8 +3,10 @@ package tracers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/spf13/viper"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -42,4 +44,17 @@ func InitTracer(url string) {
 
 	otel.SetTracerProvider(TraceProvider)
 	Trace = otel.Tracer(viper.GetString("app.name"))
+}
+
+func ShutDown() {
+	if TraceContext != nil {
+		ctx, cancel := context.WithTimeout(TraceContext, 5*time.Second)
+		defer cancel()
+
+		if err := TraceProvider.Shutdown(ctx); err != nil {
+			panic(fmt.Errorf("failed when init shutdown tracer: %v", err))
+		}
+
+		TraceCancel()
+	}
 }
