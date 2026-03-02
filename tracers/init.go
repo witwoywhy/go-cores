@@ -46,15 +46,17 @@ func InitTracer(url string) {
 	Trace = otel.Tracer(viper.GetString("app.name"))
 }
 
-func ShutDown() {
+func ShutDown() error {
 	if TraceContext != nil {
 		ctx, cancel := context.WithTimeout(TraceContext, 5*time.Second)
 		defer cancel()
 
 		if err := TraceProvider.Shutdown(ctx); err != nil {
-			panic(fmt.Errorf("failed when init shutdown tracer: %v", err))
+			return err
 		}
 
 		TraceCancel()
 	}
+
+	return nil
 }

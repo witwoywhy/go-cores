@@ -62,3 +62,19 @@ func Init() {
 		))
 	}
 }
+
+func Shutdown() {
+	tracers.ShutDown()
+
+	if kafkaHandler != nil {
+		if err := kafkaHandler.Shutdown(); err != nil {
+			L.Errorf("failed when shutdown kafka log: %v", err)
+		}
+	}
+
+	if tracers.TraceContext != nil {
+		if err := tracers.ShutDown(); err != nil {
+			L.Errorf("failed when init shutdown tracer: %v", err)
+		}
+	}
+}

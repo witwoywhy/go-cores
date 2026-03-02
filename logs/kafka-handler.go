@@ -21,10 +21,13 @@ func NewKafkaHandler(
 	kafka *kafka.Producer,
 	options *slog.HandlerOptions,
 ) *KafkaHandler {
-	return &KafkaHandler{
+	handler := &KafkaHandler{
 		Handler: slog.NewJSONHandler(nil, options),
 		kafka:   kafka,
 	}
+
+	kafkaHandler = handler
+	return handler
 }
 
 func (h *KafkaHandler) Handle(ctx context.Context, r slog.Record) error {
@@ -57,4 +60,8 @@ func (h *KafkaHandler) Handle(ctx context.Context, r slog.Record) error {
 	})
 
 	return h.kafka.Publish(fields[apps.TraceID].(string), fields)
+}
+
+func (h *KafkaHandler) Shutdown() error {
+	return h.kafka.Shutdown()
 }

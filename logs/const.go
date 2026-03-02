@@ -23,6 +23,10 @@ var (
 	})
 )
 
+var (
+	kafkaHandler *KafkaHandler
+)
+
 const (
 	Message     = "message"
 	MaskingChar = "*"
