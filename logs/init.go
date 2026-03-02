@@ -33,8 +33,8 @@ func Init() {
 	}
 
 	if LogConfig.MaskingList != "" {
-		maskingList := strings.Split(LogConfig.MaskingList, "|")
-		for _, v := range maskingList {
+		maskingList := strings.SplitSeq(LogConfig.MaskingList, "|")
+		for v := range maskingList {
 			MaskingList[v] = true
 		}
 	}
@@ -47,12 +47,16 @@ func Init() {
 
 	if LogConfig.IsAsync {
 		SL = slog.New(
-			NewFranzGOKafkaHandler(
-				kafka.NewFranzaGOProducer("log.producer"),
+			NewPublisherHandler(
+				kafka.NewProducer(
+					kafka.Key("log.producer"),
+					kafka.Log(L),
+				),
 				&slog.HandlerOptions{
 					Level: level,
 				},
-			))
+			),
+		)
 	} else {
 		SL = slog.New(NewJsonHandler(
 			os.Stdout,
@@ -64,10 +68,8 @@ func Init() {
 }
 
 func Shutdown() {
-	tracers.ShutDown()
-
-	if kafkaHandler != nil {
-		if err := kafkaHandler.Shutdown(); err != nil {
+	if publisher != nil {
+		if err := publisher.Shutdown(L); err != nil {
 			L.Errorf("failed when shutdown kafka log: %v", err)
 		}
 	}
@@ -76,5 +78,7 @@ func Shutdown() {
 		if err := tracers.ShutDown(); err != nil {
 			L.Errorf("failed when init shutdown tracer: %v", err)
 		}
+
+		tracers.TraceCancel()
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/witwoywhy/go-cores/apps"
+	"github.com/witwoywhy/go-cores/pubsub"
 )
 
 var (
@@ -23,9 +24,7 @@ var (
 	})
 )
 
-var (
-	kafkaHandler *KafkaHandler
-)
+var publisher pubsub.Publisher
 
 const (
 	Message     = "message"

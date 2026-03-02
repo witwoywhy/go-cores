@@ -1,70 +1,81 @@
 package kafka
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/spf13/viper"
+	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/witwoywhy/go-cores/cryptos"
+	"github.com/witwoywhy/go-cores/logger"
+	"github.com/witwoywhy/go-cores/pubsub"
 )
 
 type Producer struct {
 	Topic  string
-	Client sarama.SyncProducer
+	Client *kgo.Client
 }
 
-func NewProducer(key string) *Producer {
+func NewProducer(options ...Option) pubsub.Publisher {
 	var config Config
-	if err := viper.UnmarshalKey(key, &config); err != nil {
-		panic(fmt.Errorf("failed when new producer unmarshal key %s: %v", key, err))
+	for _, option := range options {
+		option.apply(&config)
+	}
+
+	if err := viper.UnmarshalKey(config.key, &config); err != nil {
+		panic(fmt.Errorf("failed when NewFranzaGOProducer viper.UnmarshalKey %s: %v", config.key, err))
 	}
 
 	tls, err := cryptos.NewTLSConfig(config.Cert.CertFile, config.Cert.KeyFile, config.Cert.CaFile)
 	if err != nil {
-		panic(fmt.Errorf("failed when new producer tls config %s: %v", key, err))
+		panic(fmt.Errorf("failed when new producer tls config %s: %v", config.key, err))
 	}
 
-	cfg := sarama.NewConfig()
-	cfg.Net.TLS.Enable = true
-	cfg.Net.TLS.Config = tls
-	cfg.Version = sarama.V3_0_0_0
-	cfg.Producer.Return.Successes = true
-
-	producer, err := sarama.NewSyncProducer([]string{config.Broker}, cfg)
-	if err != nil {
-		panic(fmt.Errorf("failed when create producer %s: %v", key, err))
-	}
+	client, err := kgo.NewClient(
+		kgo.SeedBrokers(config.Broker),
+		kgo.DialTLSConfig(tls),
+		kgo.DefaultProduceTopic(config.Topic),
+		kgo.RequiredAcks(kgo.AllISRAcks()),
+	)
 
 	return &Producer{
 		Topic:  config.Topic,
-		Client: producer,
+		Client: client,
 	}
 }
 
-func (p *Producer) Publish(key string, v any) error {
-	var b sarama.ByteEncoder
+func (p *Producer) Publish(key string, v any, l logger.Logger) error {
+	var b []byte
 	switch t := v.(type) {
 	case string:
-		b = sarama.ByteEncoder(string(t))
+		b = []byte(t)
 	default:
-		bb, err := json.Marshal(v)
+		marshalByte, err := json.Marshal(v)
 		if err != nil {
 			return err
 		}
 
-		b = bb
+		b = marshalByte
 	}
 
-	_, _, err := p.Client.SendMessage(&sarama.ProducerMessage{
-		Topic: p.Topic,
-		Key:   sarama.StringEncoder(key),
-		Value: b,
+	p.Client.Produce(context.Background(), &kgo.Record{
+		Key:       []byte(key),
+		Value:     b,
+		Timestamp: time.Now(),
+		Topic:     p.Topic,
+	}, func(r *kgo.Record, err error) {
+		if err != nil {
+			l.Errorf("failed when produce %s: %v", key, err)
+			return
+		}
 	})
 
-	return err
+	return nil
 }
 
-func (p *Producer) Shutdown() error {
-	return p.Client.Close()
+func (p *Producer) Shutdown(l logger.Logger) error {
+	p.Client.Close()
+	return nil
 }

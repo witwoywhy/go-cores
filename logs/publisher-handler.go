@@ -7,30 +7,26 @@ import (
 	"time"
 
 	"github.com/witwoywhy/go-cores/apps"
-	"github.com/witwoywhy/go-cores/kafka"
+
+	"github.com/witwoywhy/go-cores/pubsub"
 )
 
-type KafkaHandler struct {
+type PublisherHandler struct {
 	slog.Handler
-	options *slog.HandlerOptions
-
-	kafka *kafka.Producer
+	publisher pubsub.Publisher
 }
 
-func NewKafkaHandler(
-	kafka *kafka.Producer,
+func NewPublisherHandler(
+	publisher pubsub.Publisher,
 	options *slog.HandlerOptions,
-) *KafkaHandler {
-	handler := &KafkaHandler{
-		Handler: slog.NewJSONHandler(nil, options),
-		kafka:   kafka,
+) *PublisherHandler {
+	return &PublisherHandler{
+		Handler:   slog.NewJSONHandler(nil, options),
+		publisher: publisher,
 	}
-
-	kafkaHandler = handler
-	return handler
 }
 
-func (h *KafkaHandler) Handle(ctx context.Context, r slog.Record) error {
+func (h *PublisherHandler) Handle(ctx context.Context, r slog.Record) error {
 	fields := map[string]any{
 		"timestamp": r.Time.UnixNano(),
 		"datetime":  r.Time.Format(time.RFC3339Nano),
@@ -59,9 +55,5 @@ func (h *KafkaHandler) Handle(ctx context.Context, r slog.Record) error {
 		return true
 	})
 
-	return h.kafka.Publish(fields[apps.TraceID].(string), fields)
-}
-
-func (h *KafkaHandler) Shutdown() error {
-	return h.kafka.Shutdown()
+	return h.publisher.Publish(fields[apps.TraceID].(string), fields, L)
 }
