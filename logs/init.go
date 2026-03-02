@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
+
 	"github.com/witwoywhy/go-cores/kafka"
 	"github.com/witwoywhy/go-cores/tracers"
 	"github.com/witwoywhy/go-cores/utils"
@@ -46,13 +47,12 @@ func Init() {
 
 	if LogConfig.IsAsync {
 		SL = slog.New(
-			NewKafkaHandler(
-				kafka.NewProducer("log.producer"),
+			NewFranzGOKafkaHandler(
+				kafka.NewFranzaGOProducer("log.producer"),
 				&slog.HandlerOptions{
 					Level: level,
 				},
-			),
-		)
+			))
 	} else {
 		SL = slog.New(NewJsonHandler(
 			os.Stdout,
