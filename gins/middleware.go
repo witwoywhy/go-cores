@@ -8,12 +8,30 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 	"github.com/witwoywhy/go-cores/apps"
 	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/logs"
 	"go.opentelemetry.io/otel/attribute"
 )
+
+type LogMiddleConfig struct {
+	IgnoreLogRequestBody map[string]bool
+}
+
+type LogMiddlewareOption interface{ apply(*LogMiddleConfig) }
+
+type clientLogMiddlewareOption struct{ fn func(*LogMiddleConfig) }
+
+func (opt clientLogMiddlewareOption) apply(config *LogMiddleConfig) { opt.fn(config) }
+
+func IgnoreLogRequestBody(ignoreLists []string) LogMiddlewareOption {
+	return clientLogMiddlewareOption{func(c *LogMiddleConfig) {
+		c.IgnoreLogRequestBody = map[string]bool{}
+		for _, v := range ignoreLists {
+			c.IgnoreLogRequestBody[v] = true
+		}
+	}}
+}
 
 type responseBodyWriter struct {
 	gin.ResponseWriter
@@ -25,11 +43,10 @@ func (r responseBodyWriter) Write(b []byte) (int, error) {
 	return r.ResponseWriter.Write(b)
 }
 
-func Log() gin.HandlerFunc {
-	var ignorePath []string = viper.GetStringSlice("app.ignoreLogRequestBody")
-	var mapIgnorePath = map[string]bool{}
-	for _, v := range ignorePath {
-		mapIgnorePath[v] = true
+func Log(options ...LogMiddlewareOption) gin.HandlerFunc {
+	var config LogMiddleConfig
+	for _, option := range options {
+		option.apply(&config)
 	}
 
 	return func(ctx *gin.Context) {
@@ -44,7 +61,7 @@ func Log() gin.HandlerFunc {
 
 		l, span := NewRequestLog(ctx, request.URL.Path)
 		isHasSpan := span != nil
-		isIgnoreLogBody := mapIgnorePath[ctx.FullPath()]
+		isIgnoreLogBody := config.IgnoreLogRequestBody[ctx.FullPath()]
 
 		if isHasSpan {
 			defer span.End()

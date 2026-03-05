@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	Name     string `mapstructure:"name"`
-	Port     string `mapstructure:"port"`
-	Env      string `mapstructure:"env"`
-	TimeZone string `mapstructure:"timeZone"`
+	Name                 string   `mapstructure:"name"`
+	Port                 string   `mapstructure:"port"`
+	Env                  string   `mapstructure:"env"`
+	TimeZone             string   `mapstructure:"timeZone"`
+	IgnoreLogRequestBody []string `mapstructure:"ignoreLogRequestBody"`
 }
 
 func InitAppConfig[T any](config *T) {
