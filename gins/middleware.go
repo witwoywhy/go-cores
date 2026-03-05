@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"github.com/witwoywhy/go-cores/apps"
 	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/logs"
@@ -25,6 +26,12 @@ func (r responseBodyWriter) Write(b []byte) (int, error) {
 }
 
 func Log() gin.HandlerFunc {
+	var ignorePath []string = viper.GetStringSlice("app.ignoreLogRequestBody")
+	var mapIgnorePath = map[string]bool{}
+	for _, v := range ignorePath {
+		mapIgnorePath[v] = true
+	}
+
 	return func(ctx *gin.Context) {
 		now := time.Now()
 
@@ -37,7 +44,8 @@ func Log() gin.HandlerFunc {
 
 		l, span := NewRequestLog(ctx, request.URL.Path)
 		isHasSpan := span != nil
-		
+		isIgnoreLogBody := mapIgnorePath[ctx.FullPath()]
+
 		if isHasSpan {
 			defer span.End()
 		}
@@ -48,7 +56,9 @@ func Log() gin.HandlerFunc {
 		b, _ := io.ReadAll(request.Body)
 		if len(b) > 0 {
 			request.Body = io.NopCloser(bytes.NewBuffer(b))
-			json.Unmarshal(b, &requestBody)
+			if !isIgnoreLogBody {
+				json.Unmarshal(b, &requestBody)
+			}
 		}
 
 		l.JSON(map[string]any{
@@ -64,7 +74,7 @@ func Log() gin.HandlerFunc {
 		}
 
 		responseBody := map[string]any{}
-		if len(writer.body.Bytes()) > 0 {
+		if len(writer.body.Bytes()) > 0 && !isIgnoreLogBody {
 			json.Unmarshal(writer.body.Bytes(), &responseBody)
 		}
 
