@@ -27,6 +27,18 @@ func masking(m map[string]any) {
 			if isKeyInList(k) {
 				m[k] = MaskChar(v.(string))
 			}
+		case reflect.Slice:
+			sliceItems, ok := v.([]interface{})
+			if !ok {
+				continue
+			}
+
+			for _, item := range sliceItems {
+				mapValue, ok := item.(map[string]any)
+				if ok {
+					masking(mapValue)
+				}
+			}
 		}
 	}
 }

@@ -62,4 +62,3 @@ func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
 	h.l.Println(string(b))
 	return nil
 }
-
