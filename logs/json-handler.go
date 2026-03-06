@@ -25,32 +25,32 @@ func NewJsonHandler(
 }
 
 func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
-	fields := map[string]any{
-		"timestamp": r.Time.UnixNano(),
-		"datetime":  r.Time.Format(time.RFC3339Nano),
-		"severity":  r.Level,
-	}
+	fields := make(map[string]any, 3+r.NumAttrs())
+	fields["timestamp"] = r.Time.UnixNano()
+	fields["datetime"] = r.Time.Format(time.RFC3339Nano)
+	fields["severity"] = r.Level
 
 	r.Attrs(func(a slog.Attr) bool {
-		if a.Value.Kind() == slog.KindAny {
-			m, ok := a.Value.Any().(map[string]any)
-			if !ok {
-				b, err := json.Marshal(a.Value.Any())
-				if err != nil {
-					return false
-				}
-
-				err = json.Unmarshal(b, &m)
-				if err != nil {
-					return false
-				}
-			}
-
-			masking(m)
-			fields[a.Key] = m
+		if a.Value.Kind() != slog.KindAny {
+			fields[a.Key] = a.Value.Any()
 			return true
 		}
-		fields[a.Key] = a.Value.Any()
+
+		m, ok := a.Value.Any().(map[string]any)
+		if !ok {
+			b, err := json.Marshal(a.Value.Any())
+			if err != nil {
+				return false
+			}
+
+			err = json.Unmarshal(b, &m)
+			if err != nil {
+				return false
+			}
+		}
+
+		Masking(m)
+		fields[a.Key] = m
 		return true
 	})
 

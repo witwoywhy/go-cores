@@ -1,7 +1,6 @@
 package logs
 
 import (
-	"reflect"
 	"strings"
 	"unicode/utf8"
 )
@@ -14,29 +13,23 @@ func infoToArgs(info map[string]any) []any {
 	return args
 }
 
-func masking(m map[string]any) {
+func Masking(m map[string]any) {
 	for k, v := range m {
 		if v == nil {
 			continue
 		}
 
-		switch reflect.TypeOf(v).Kind() {
-		case reflect.Map:
-			masking(v.(map[string]any))
-		case reflect.String:
-			if isKeyInList(k) {
-				m[k] = MaskChar(v.(string))
+		switch val := v.(type) {
+		case map[string]any:
+			Masking(val)
+		case string:
+			if _, sensitive := MaskingList[k]; sensitive {
+				m[k] = MaskChar(val)
 			}
-		case reflect.Slice:
-			sliceItems, ok := v.([]interface{})
-			if !ok {
-				continue
-			}
-
-			for _, item := range sliceItems {
-				mapValue, ok := item.(map[string]any)
-				if ok {
-					masking(mapValue)
+		case []any:
+			for _, item := range val {
+				if mapVal, ok := item.(map[string]any); ok {
+					Masking(mapVal)
 				}
 			}
 		}
@@ -49,13 +42,14 @@ func MaskChar(s string) string {
 		return strings.Repeat(MaskingChar, ln)
 	}
 
-	f, _ := utf8.DecodeRuneInString(s)
-	l, _ := utf8.DecodeLastRuneInString(s)
+	f, fSize := utf8.DecodeRuneInString(s)
+	l, lSize := utf8.DecodeLastRuneInString(s)
+	mask := strings.Repeat(MaskingChar, ln-2)
 
-	return string(f) + strings.Repeat(MaskingChar, ln-2) + string(l)
-}
-
-func isKeyInList(key string) bool {
-	_, ok := MaskingList[key]
-	return ok
+	var b strings.Builder
+	b.Grow(fSize + len(mask) + lSize)
+	b.WriteRune(f)
+	b.WriteString(mask)
+	b.WriteRune(l)
+	return b.String()
 }
