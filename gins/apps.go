@@ -2,6 +2,7 @@ package gins
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -9,8 +10,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/errs"
+	httpserve "github.com/witwoywhy/go-cores/http-serve"
 	"github.com/witwoywhy/go-cores/logger"
 	"github.com/witwoywhy/go-cores/logs"
 )
@@ -20,27 +23,49 @@ type GinApps interface {
 	UseMiddleware(middleware ...gin.HandlerFunc)
 	WithParseRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc
 	WithParseLogger(handle HandleWithLogger) gin.HandlerFunc
-	ListenAndServe(addr string, closeFunc func())
+	ListenAndServe(closeFunc func())
+
+	// middleware
+	Log() gin.HandlerFunc
+	Error() gin.HandlerFunc
 }
 
 type app struct {
 	gin *gin.Engine
+
+	config        httpserve.HTTPServe
+	ignoreLogBody map[string]bool
+	errorMapping  errs.ErrorCodeMapping
 }
 
 func New() GinApps {
-	return &app{
-		gin: gin.New(),
+	var config httpserve.HTTPServe
+	if err := viper.UnmarshalKey("http_serve", &config); err != nil {
+		panic(fmt.Errorf("failed to loaded [http_serve] config: %v", err))
 	}
+
+	a := &app{
+		gin:           gin.New(),
+		config:        config,
+		ignoreLogBody: map[string]bool{},
+		errorMapping:  errs.ParseToErrorCodeMapping(config.ErrorCodeMapping, logs.L),
+	}
+
+	for _, v := range config.IgnoreLogBody {
+		a.ignoreLogBody[v] = true
+	}
+
+	return a
 }
 
-func (a *app) ListenAndServe(addr string, closeFunc func()) {
+func (a *app) ListenAndServe(closeFunc func()) {
 	srv := &http.Server{
-		Addr:    addr,
+		Addr:    fmt.Sprintf(":%s", a.config.Port),
 		Handler: a.gin,
 	}
 
 	go func() {
-		logs.L.Infof("Listen: %s", addr)
+		logs.L.Infof("Listen: %s", srv.Addr)
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logs.L.Errorf("listen error: %v", err)

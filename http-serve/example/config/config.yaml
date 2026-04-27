@@ -1,0 +1,6 @@
+http_serve:
+  port: 8080
+  ignore_log_body:
+    - /v1/health
+  error_code_mapping: |
+    {}
