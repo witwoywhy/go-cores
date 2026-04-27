@@ -9,25 +9,23 @@ import (
 )
 
 type gormLog struct {
-	l   ll.Logger
-	opt GormLogOption
+	l         ll.Logger
+	traceFunc func(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error, l ll.Logger)
 }
 
 type GormLogOption struct {
 	IsLogSql bool
 }
 
-func NewGormLog(l ll.Logger, opt ...GormLogOption) logger.Interface {
-	var option GormLogOption
+func NewGormLog(options ...GormLogConfigOption) logger.Interface {
+	var gl gormLog
+	gl.traceFunc = traceWithoutDebug
 
-	if len(opt) > 0 {
-		option = opt[0]
+	for _, option := range options {
+		option.apply(&gl)
 	}
 
-	return &gormLog{
-		l:   l,
-		opt: option,
-	}
+	return &gl
 }
 
 func (g *gormLog) Error(context.Context, string, ...interface{}) {
@@ -46,19 +44,6 @@ func (g *gormLog) Warn(context.Context, string, ...interface{}) {
 	panic("unimplemented gorm log warn")
 }
 
-func (g *gormLog) Trace(
-	ctx context.Context,
-	begin time.Time,
-	fc func() (sql string, rowsAffected int64),
-	err error,
-) {
-	g.l.Info(StartOutbound)
-	sql, _ := fc()
-	since := time.Since(begin)
-
-	if g.opt.IsLogSql {
-		g.l.Infof("GORM SQL: %v", sql)
-	}
-
-	g.l.Infof(EndOutbound, since, getTableNameFromQuery(sql))
+func (g *gormLog) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+	g.traceFunc(ctx, begin, fc, err, g.l)
 }

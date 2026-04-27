@@ -21,7 +21,7 @@ func mysql() {
 	db := gorms.Init("db.mysql")
 	l := logs.New(map[string]any{})
 	spl := logs.NewSpanLog(l)
-	gormLog := gorms.NewGormLog(spl)
+	gormLog := gorms.NewGormLog(gorms.AddLogger(spl))
 
 	db.AutoMigrate(&User{})
 
@@ -41,7 +41,7 @@ func pg() {
 	db := gorms.Init("db.pg")
 	l := logs.New(map[string]any{})
 	spl := logs.NewSpanLog(l)
-	gormLog := gorms.NewGormLog(spl)
+	gormLog := gorms.NewGormLog(gorms.AddLogger(spl))
 
 	db.AutoMigrate(&User{})
 

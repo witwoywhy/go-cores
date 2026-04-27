@@ -22,19 +22,17 @@ func Init(key string) *gorm.DB {
 	var err error
 	switch strings.ToLower(config.Driver) {
 	case dbs.Pg:
-		gormDb, err = gorm.Open(postgres.New(postgres.Config{DSN: config.Dsn}))
+		gormDb, err = gorm.Open(postgres.New(postgres.Config{DSN: config.ToDSN()}))
 	case dbs.Mysql:
 		mysqlConfig := mysql.Config{}
-		if config.Dsn != "" {
-			mysqlConfig.DSN = config.Dsn
+		if config.DSN != "" {
+			mysqlConfig.DSN = config.DSN
 		} else {
 			mysqlConfig.DSNConfig = &mysqld.Config{
 				User:         config.Username,
 				Passwd:       config.Password,
-				Net:          "",
 				Addr:         config.Host,
 				DBName:       config.Database,
-				Params:       map[string]string{},
 				Timeout:      config.Timeout,
 				ReadTimeout:  config.ReadTimeout,
 				WriteTimeout: config.WriteTimeout,
