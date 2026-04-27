@@ -2,9 +2,12 @@ package main
 
 import (
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/witwoywhy/go-cores/logs"
+	"github.com/witwoywhy/go-cores/tracers"
+	"github.com/witwoywhy/go-cores/vipers"
 )
 
 type User struct {
@@ -15,12 +18,16 @@ type User struct {
 	Selected   []string  `json:"selected"`
 }
 
+func init() {
+	vipers.Init()
+	logs.Init()
+}
+
 func main() {
-	l := logs.New(map[string]any{
-		"information": map[string]any{
-			"userId": uuid.NewString(),
-		},
-	})
+	defer tracers.Shutdown()
+
+	l, span := logs.NewLog()
+	defer span.End()
 
 	l.Info("test info")
 	l.Infof("test %s %s", "format", "info")
@@ -47,4 +54,6 @@ func main() {
 	defer end()
 
 	ll.Info("USER")
+
+	time.Sleep(5 * time.Second)
 }

@@ -1,12 +1,9 @@
 package logs
 
-var LogConfig Config
-
-type Config struct {
-	Level       string  `mapstructure:"level"`
-	MaskingList string  `mapstructure:"maskingList"`
-	TracerUrl   *string `mapstructure:"tracerUrl"`
-	IsAsync     bool    `mapstructure:"isAsync"`
+type ConfigInfo struct {
+	Level       string `mapstructure:"level"`
+	MaskingList string `mapstructure:"masking_list"`
+	TracerUrl   string `mapstructure:"tracer_url"`
 
 	IsEnableTracer bool
 }

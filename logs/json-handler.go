@@ -12,16 +12,30 @@ import (
 type JsonHandler struct {
 	slog.Handler
 	l *log.Logger
+
+	addServiceNameFunc func(fields map[string]any)
 }
 
 func NewJsonHandler(
+	serviceName string,
 	out io.Writer,
 	options *slog.HandlerOptions,
+
 ) *JsonHandler {
-	return &JsonHandler{
+	handler := &JsonHandler{
 		Handler: slog.NewJSONHandler(out, options),
 		l:       log.New(out, "", 0),
 	}
+
+	if serviceName == "" {
+		handler.addServiceNameFunc = func(fields map[string]any) {}
+	} else {
+		handler.addServiceNameFunc = func(fields map[string]any) {
+			fields["service"] = serviceName
+		}
+	}
+
+	return handler
 }
 
 func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
@@ -29,6 +43,7 @@ func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
 	fields["timestamp"] = r.Time.UnixNano()
 	fields["datetime"] = r.Time.Format(time.RFC3339Nano)
 	fields["severity"] = r.Level
+	h.addServiceName(fields)
 
 	r.Attrs(func(a slog.Attr) bool {
 		if a.Value.Kind() != slog.KindAny {
@@ -49,7 +64,7 @@ func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
 			}
 		}
 
-		Masking(m)
+		masking(m)
 		fields[a.Key] = m
 		return true
 	})
@@ -61,4 +76,8 @@ func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	h.l.Println(string(b))
 	return nil
+}
+
+func (h *JsonHandler) addServiceName(fields map[string]any) {
+	h.addServiceNameFunc(fields)
 }

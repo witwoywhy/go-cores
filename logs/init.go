@@ -7,19 +7,21 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
-
-	"github.com/witwoywhy/go-cores/kafka"
 	"github.com/witwoywhy/go-cores/tracers"
-	"github.com/witwoywhy/go-cores/utils"
 )
 
-func Init() {
-	if err := viper.UnmarshalKey("log", &LogConfig); err != nil {
+func Init(options ...LogConfigOption) {
+	var configOption logConfigOption
+	for _, option := range options {
+		option.apply(&configOption)
+	}
+
+	if err := viper.UnmarshalKey("log", &Config); err != nil {
 		panic(fmt.Errorf("failed to loaded log config: %v", err))
 	}
 
 	var level slog.Level
-	switch strings.ToLower(LogConfig.Level) {
+	switch strings.ToLower(Config.Level) {
 	case "info":
 		level = slog.LevelInfo
 	case "debug":
@@ -32,34 +34,32 @@ func Init() {
 		level = slog.LevelInfo
 	}
 
-	if LogConfig.MaskingList != "" {
-		maskingList := strings.SplitSeq(LogConfig.MaskingList, "|")
-		for v := range maskingList {
-			MaskingList[v] = true
+	if Config.MaskingList != "" {
+		for v := range strings.SplitSeq(Config.MaskingList, "|") {
+			maskingList[v] = true
 		}
 	}
 
-	if LogConfig.TracerUrl != nil {
-		tracers.InitTracer(utils.NotNil(LogConfig.TracerUrl))
-		NewSpanLogAction = NewSpanLogActionTracer
-		LogConfig.IsEnableTracer = true
+	if Config.TracerUrl != "" {
+		tracers.Init(Config.TracerUrl)
+		NewSpanLog = newSpanLogTracer
+		NewSpanLogAction = newSpanLogActionTracer
+		Config.IsEnableTracer = true
 	}
 
-	if LogConfig.IsAsync {
-		SL = slog.New(
-			NewPublisherHandler(
-				kafka.NewProducer(
-					kafka.Key("log.producer"),
-					kafka.Log(L),
-				),
-				&slog.HandlerOptions{
-					Level: level,
-				},
-			),
-		)
-	} else {
+	producer = configOption.producer
+	if producer == nil {
 		SL = slog.New(NewJsonHandler(
+			viper.GetString("app.name"),
 			os.Stdout,
+			&slog.HandlerOptions{
+				Level: level,
+			},
+		))
+	} else {
+		SL = slog.New(NewProducerHandler(
+			viper.GetString("app.name"),
+			producer,
 			&slog.HandlerOptions{
 				Level: level,
 			},
@@ -68,17 +68,7 @@ func Init() {
 }
 
 func Shutdown() {
-	if publisher != nil {
-		if err := publisher.Shutdown(L); err != nil {
-			L.Errorf("failed when shutdown kafka log: %v", err)
-		}
-	}
-
-	if tracers.TraceContext != nil {
-		if err := tracers.ShutDown(); err != nil {
-			L.Errorf("failed when init shutdown tracer: %v", err)
-		}
-
-		tracers.TraceCancel()
+	if producer != nil {
+		producer.Shutdown(L)
 	}
 }

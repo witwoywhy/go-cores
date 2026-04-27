@@ -1,0 +1,8 @@
+app:
+  name: example-log
+  env: dev
+
+log:
+  level: info
+  masking_list:
+  tracer_url: http://localhost:4318
