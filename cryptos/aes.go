@@ -9,14 +9,13 @@ import (
 	"log"
 )
 
-var iv = []byte("2622233964834367")
-
 type aesCompatibleCryptoJS struct {
 	key   []byte
+	iv    []byte
 	block cipher.Block
 }
 
-func NewAesCompatibleCryptoJS(key string) *aesCompatibleCryptoJS {
+func NewAesCompatibleCryptoJS(key string, iv []byte) *aesCompatibleCryptoJS {
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		log.Fatal(err)
@@ -24,6 +23,7 @@ func NewAesCompatibleCryptoJS(key string) *aesCompatibleCryptoJS {
 
 	return &aesCompatibleCryptoJS{
 		key:   []byte(key),
+		iv:    iv,
 		block: block,
 	}
 }
@@ -34,10 +34,10 @@ func (a *aesCompatibleCryptoJS) pad(data []byte) []byte {
 	return append(data, padtext...)
 }
 
-func (a *aesCompatibleCryptoJS) Encrypt(v interface{}) (string, error) {
+func (a *aesCompatibleCryptoJS) Encrypt(v any) (string, error) {
 	var b []byte
 	switch t := v.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		out, err := json.Marshal(v)
 		if err != nil {
 			return "", err
@@ -53,7 +53,7 @@ func (a *aesCompatibleCryptoJS) Encrypt(v interface{}) (string, error) {
 
 	b = a.pad(b)
 
-	blockMode := cipher.NewCBCEncrypter(a.block, iv)
+	blockMode := cipher.NewCBCEncrypter(a.block, a.iv)
 	ciphertext := make([]byte, len(b))
 	blockMode.CryptBlocks(ciphertext, b)
 	return B64Encode(ciphertext), nil
@@ -71,7 +71,7 @@ func (a *aesCompatibleCryptoJS) Decrypt(enc string) (string, error) {
 		return "", err
 	}
 
-	blockMode := cipher.NewCBCDecrypter(a.block, iv)
+	blockMode := cipher.NewCBCDecrypter(a.block, a.iv)
 	dec := make([]byte, len(b))
 	blockMode.CryptBlocks(dec, b)
 	return string(a.unpad(dec)), nil
