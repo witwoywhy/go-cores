@@ -1,0 +1,4 @@
+app:
+  name: example
+  env: dev
+  time_zone: UTC

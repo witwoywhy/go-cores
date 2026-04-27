@@ -9,16 +9,9 @@ import (
 var Config ConfigInfo
 
 type ConfigInfo struct {
-	Name      string    `mapstructure:"name"`
-	Env       string    `mapstructure:"env"`
-	TimeZone  string    `mapstructure:"time_zone"`
-	HTTPServe HTTPServe `mapstructure:"http_serve"`
-}
-
-type HTTPServe struct {
-	Port             string   `mapstructure:"port"`
-	IgnoreLogBody    []string `mapstructure:"ignore_log_body"`
-	ErrorCodeMapping string   `mapstructure:"error_code_mapping"`
+	Name     string `mapstructure:"name"`
+	Env      string `mapstructure:"env"`
+	TimeZone string `mapstructure:"time_zone"`
 }
 
 func Init() *ConfigInfo {
