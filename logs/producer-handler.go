@@ -59,12 +59,5 @@ func (h *ProducerHandler) Handle(ctx context.Context, r slog.Record) error {
 		return true
 	})
 
-	var message = &pubsub.Message[map[string]any]{
-		Context: pubsub.MessageContext{
-			TraceID: fields[apps.TraceID].(string),
-			SpanID:  fields[apps.SpanID].(string),
-		},
-		Data: &fields,
-	}
-	return h.producer.Produce(fields[apps.TraceID].(string), message, L)
+	return h.producer.Produce(fields[apps.TraceID].(string), fields, L)
 }

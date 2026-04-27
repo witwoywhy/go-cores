@@ -1,0 +1,34 @@
+app:
+  name: example-pubsub
+  env: dev
+
+pubsub:
+  pub:
+    broker: 
+    topic: test
+    cert:
+      type: value
+      ca: |
+        -----BEGIN CERTIFICATE-----
+        -----END CERTIFICATE-----
+      cert: |
+        -----BEGIN CERTIFICATE-----
+        -----END CERTIFICATE-----
+      key: |
+        -----BEGIN PRIVATE KEY-----
+        -----END PRIVATE KEY-----
+  sub:
+    broker: kafka-async-func-async-func.i.aivencloud.com:13317
+    topic: test
+    consumer_group: test-group
+    cert:
+      type: value
+      ca: |
+        -----BEGIN CERTIFICATE-----
+        -----END CERTIFICATE-----
+      cert: |
+        -----BEGIN CERTIFICATE-----
+        -----END CERTIFICATE-----
+      key: |
+        -----BEGIN PRIVATE KEY-----
+        -----END PRIVATE KEY-----

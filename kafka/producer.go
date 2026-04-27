@@ -2,8 +2,10 @@ package kafka
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/spf13/viper"
@@ -16,21 +18,35 @@ import (
 type Producer struct {
 	Topic  string
 	Client *kgo.Client
+
+	onceShutdown sync.Once
 }
 
-func NewProducer(options ...Option) pubsub.Publisher {
+func NewProducer(options ...Option) pubsub.Producer {
 	var config Config
 	for _, option := range options {
 		option.apply(&config)
 	}
 
 	if err := viper.UnmarshalKey(config.key, &config); err != nil {
-		panic(fmt.Errorf("failed when NewFranzaGOProducer viper.UnmarshalKey %s: %v", config.key, err))
+		panic(fmt.Errorf("failed when kafka new producer viper.UnmarshalKey [%s]: %v", config.key, err))
 	}
 
-	tls, err := cryptos.NewTLSConfig(config.Cert.CertFile, config.Cert.KeyFile, config.Cert.CaFile)
+	if config.Broker == "" {
+		fmt.Println(`new producer config.Broker is ""`)
+		return nil
+	}
+
+	var tls *tls.Config
+	var err error
+	switch config.Cert.Type {
+	case "value":
+		tls, err = cryptos.NewTLSConfig(config.Cert.Cert, config.Cert.Key, config.Cert.CA)
+	default: // flie
+		tls, err = cryptos.NewTLSConfigFromFile(config.Cert.Cert, config.Cert.Key, config.Cert.CA)
+	}
 	if err != nil {
-		panic(fmt.Errorf("failed when new producer tls config %s: %v", config.key, err))
+		panic(fmt.Errorf("failed when kafka new consumer group tls config [%s]: %v", config.key, err))
 	}
 
 	client, err := kgo.NewClient(
@@ -40,24 +56,30 @@ func NewProducer(options ...Option) pubsub.Publisher {
 		kgo.RequiredAcks(kgo.AllISRAcks()),
 	)
 
+	if err := client.Ping(context.Background()); err != nil {
+		panic(fmt.Errorf("failed when kafka producer ping [%s]: %v", config.key, err))
+	}
+
 	return &Producer{
-		Topic:  config.Topic,
-		Client: client,
+		Topic:        config.Topic,
+		Client:       client,
+		onceShutdown: sync.Once{},
 	}
 }
 
-func (p *Producer) Publish(key string, v any, l logger.Logger) error {
+func (p *Producer) Produce(key string, v any, l logger.Logger) error {
 	var b []byte
 	switch t := v.(type) {
+	case []byte:
+		b = t
 	case string:
 		b = []byte(t)
 	default:
-		marshalByte, err := json.Marshal(v)
+		var err error
+		b, err = json.Marshal(v)
 		if err != nil {
 			return err
 		}
-
-		b = marshalByte
 	}
 
 	p.Client.Produce(context.Background(), &kgo.Record{
@@ -76,6 +98,8 @@ func (p *Producer) Publish(key string, v any, l logger.Logger) error {
 }
 
 func (p *Producer) Shutdown(l logger.Logger) error {
-	p.Client.Close()
+	p.onceShutdown.Do(func() {
+		p.Client.Close()
+	})
 	return nil
 }
