@@ -6,7 +6,7 @@ import (
 )
 
 func Init() {
-	configs := viper.GetStringMap("circuitBreakers")
+	configs := viper.GetStringMap("circuit_breakers")
 
 	if len(configs) == 0 {
 		return
@@ -15,10 +15,10 @@ func Init() {
 	for k, v := range configs {
 		hystrix.ConfigureCommand(k, hystrix.CommandConfig{
 			Timeout:                v.(map[string]any)["timeout"].(int),
-			MaxConcurrentRequests:  v.(map[string]any)["maxconcurrentrequests"].(int),
-			RequestVolumeThreshold: v.(map[string]any)["requestvolumethreshold"].(int),
-			SleepWindow:            v.(map[string]any)["sleepwindow"].(int),
-			ErrorPercentThreshold:  v.(map[string]any)["errorpercentthreshold"].(int),
+			MaxConcurrentRequests:  v.(map[string]any)["max_concurrent_requests"].(int),
+			RequestVolumeThreshold: v.(map[string]any)["request_volume_threshold"].(int),
+			SleepWindow:            v.(map[string]any)["sleep_window"].(int),
+			ErrorPercentThreshold:  v.(map[string]any)["error_percent_threshold"].(int),
 		})
 	}
 }
