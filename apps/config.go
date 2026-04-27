@@ -6,16 +6,25 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Config struct {
-	Name                 string   `mapstructure:"name"`
-	Port                 string   `mapstructure:"port"`
-	Env                  string   `mapstructure:"env"`
-	TimeZone             string   `mapstructure:"timeZone"`
-	IgnoreLogRequestBody []string `mapstructure:"ignoreLogRequestBody"`
+var Config ConfigInfo
+
+type ConfigInfo struct {
+	Name      string    `mapstructure:"name"`
+	Env       string    `mapstructure:"env"`
+	TimeZone  string    `mapstructure:"time_zone"`
+	HTTPServe HTTPServe `mapstructure:"http_serve"`
 }
 
-func InitAppConfig[T any](config *T) {
-	if err := viper.UnmarshalKey("app", config); err != nil {
-		panic(fmt.Errorf("failed to loaded app config: %v", err))
+type HTTPServe struct {
+	Port             string   `mapstructure:"port"`
+	IgnoreLogBody    []string `mapstructure:"ignore_log_body"`
+	ErrorCodeMapping string   `mapstructure:"error_code_mapping"`
+}
+
+func Init() *ConfigInfo {
+	if err := viper.UnmarshalKey("app", &Config); err != nil {
+		panic(fmt.Errorf("failed to loaded [app] config: %v", err))
 	}
+
+	return &Config
 }
