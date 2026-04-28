@@ -1,0 +1,17 @@
+integrations:
+  get_user:
+    base_url: http://localhost:3005
+    method: GET
+    url: /users/{id}
+    timeout: 10s
+    enable_insecure_skip_verify: true
+    enable_ignore_log_body: false
+    api_key: API-KEY
+  update_user:
+    base_url: http://localhost:3005
+    method: POST
+    url: /users/{id}
+    timeout: 10s
+    enable_insecure_skip_verify: true
+    enable_ignore_log_body: false
+    api_key: API-KEY

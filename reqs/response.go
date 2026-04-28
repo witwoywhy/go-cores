@@ -1,6 +1,6 @@
 package reqs
 
-import "github.com/imroc/req/v3"
+import "github.com/witwoywhy/req"
 
 type Response interface {
 	IsErrorState() bool
