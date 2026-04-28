@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/go-core-library.git/apps"
 	"github.com/gin-gonic/gin"
+	"github.com/witwoywhy/go-cores/apps"
 	"github.com/witwoywhy/go-cores/utils"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -66,7 +66,7 @@ func (a *app) Log() gin.HandlerFunc {
 			apps.Body:    requestBody,
 			apps.Method:  request.Method,
 			apps.Host:    request.Host,
-			apps.Url:     request.URL.Path,
+			apps.URL:     request.URL.Path,
 			apps.Message: fmt.Sprintf(apps.StartInboundFmt, request.Method, request.Host, request.URL.Path),
 		})
 
@@ -88,7 +88,7 @@ func (a *app) Log() gin.HandlerFunc {
 			apps.Key:         apps.EndInbound,
 			apps.Header:      responseHeader,
 			apps.Body:        responseBody,
-			apps.HttpStatus:  writer.Status(),
+			apps.HTTPStatus:  writer.Status(),
 			apps.ProcessTime: processTime,
 			apps.Message:     fmt.Sprintf(apps.EndInboundFmt, writer.Status(), processTime, request.Method, request.URL.Path),
 		})
@@ -99,9 +99,9 @@ func (a *app) Log() gin.HandlerFunc {
 			apps.ResponseHeader: responseHeader,
 			apps.RequestBody:    requestBody,
 			apps.ResponseBody:   responseBody,
-			apps.HttpStatus:     writer.Status(),
+			apps.HTTPStatus:     writer.Status(),
 			apps.ProcessTime:    processTime,
-			apps.Url:            request.URL.Path,
+			apps.URL:            request.URL.Path,
 			apps.Message:        fmt.Sprintf(apps.SummaryInboundFmt, writer.Status(), processTime, request.Method, request.URL.Path),
 		})
 	}
