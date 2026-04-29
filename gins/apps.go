@@ -147,3 +147,11 @@ func (a *app) WithParseRouteContext(handle HandleWithRouteContextLogger) gin.Han
 		handle(ctx, routeContext.(*contexts.RouteContext), l)
 	}
 }
+
+func (a *app) Error() gin.HandlerFunc {
+	return Error(a.errorMapping)
+}
+
+func (a *app) Log() gin.HandlerFunc {
+	return Log(a.ignoreLogBody)
+}

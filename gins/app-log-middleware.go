@@ -24,7 +24,7 @@ func (r responseBodyWriter) Write(b []byte) (int, error) {
 	return r.ResponseWriter.Write(b)
 }
 
-func (a *app) Log() gin.HandlerFunc {
+func Log(ignoreLogBody map[string]bool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		now := time.Now()
 
@@ -37,7 +37,7 @@ func (a *app) Log() gin.HandlerFunc {
 
 		var (
 			isHasSpan       = span != nil
-			isIgnoreLogBody = a.ignoreLogBody[ctx.FullPath()]
+			isIgnoreLogBody = ignoreLogBody[ctx.FullPath()]
 
 			requestBody    map[string]any
 			responseBody   map[string]any

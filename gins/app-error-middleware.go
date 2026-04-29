@@ -8,7 +8,7 @@ import (
 	"github.com/witwoywhy/go-cores/errs"
 )
 
-func (a *app) Error() gin.HandlerFunc {
+func Error(mapping errs.ErrorCodeMapping) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Next()
 
@@ -23,7 +23,7 @@ func (a *app) Error() gin.HandlerFunc {
 			for i, e := range ers.Errors {
 				status = e.HttpStatus()
 
-				mappingLang, ok := a.errorMapping[e.ErrorCode]
+				mappingLang, ok := mapping[e.ErrorCode]
 				if !ok {
 					continue
 				}
