@@ -6,6 +6,12 @@ pubsub:
   pub:
     broker: 
     topic: test
+    batch_size: 1048576
+    max_buffer_records: 10000
+    max_in_flight_requests: 5
+    linger: 5ms
+    request_timeout: 60s
+    delivery_timeout: 180s
     cert:
       type: value
       ca: |
@@ -18,9 +24,17 @@ pubsub:
         -----BEGIN PRIVATE KEY-----
         -----END PRIVATE KEY-----
   sub:
-    broker: kafka-async-func-async-func.i.aivencloud.com:13317
+    broker: 
     topic: test
     consumer_group: test-group
+    fetch_max_bytes: 5242880
+    fetch_min_bytes: 1024
+    fetch_max_partition_bytes: 1048576
+    fetch_max_wait: 1s
+    session_timeout: 60s
+    heartbeat_interval: 10s
+    max_poll_interval: 600s
+    request_timeout: 60s
     cert:
       type: value
       ca: |

@@ -29,14 +29,19 @@ type consumerGroup struct {
 }
 
 func NewConsumerGroup(options ...Option) pubsub.ConsumerGroup {
-	var config Config
+	var (
+		opt    OptionConfig
+		config ConsumerConfig
+	)
 	for _, option := range options {
-		option.apply(&config)
+		option.apply(&opt)
 	}
 
-	if err := viper.UnmarshalKey(config.key, &config); err != nil {
-		panic(fmt.Errorf("failed when kafka new consumer group viper.UnmarshalKey [%s]: %v", config.key, err))
+	if err := viper.UnmarshalKey(opt.key, &config); err != nil {
+		panic(fmt.Errorf("failed when kafka new consumer group viper.UnmarshalKey [%s]: %v", opt.key, err))
 	}
+
+	config = checkingConsumerConfig(config)
 
 	var tls *tls.Config
 	var err error
@@ -47,7 +52,7 @@ func NewConsumerGroup(options ...Option) pubsub.ConsumerGroup {
 		tls, err = cryptos.NewTLSConfigFromFile(config.Cert.Cert, config.Cert.Key, config.Cert.CA)
 	}
 	if err != nil {
-		panic(fmt.Errorf("failed when kafka new consumer group tls config [%s]: %v", config.key, err))
+		panic(fmt.Errorf("failed when kafka new consumer group tls config [%s]: %v", opt.key, err))
 	}
 
 	client, err := kgo.NewClient(
@@ -55,10 +60,22 @@ func NewConsumerGroup(options ...Option) pubsub.ConsumerGroup {
 		kgo.DialTLSConfig(tls),
 		kgo.ConsumeTopics(config.Topic),
 		kgo.ConsumerGroup(config.ConsumerGroup),
-	)
 
+		kgo.FetchMaxBytes(int32(config.FetchMaxBytes)),
+		kgo.FetchMinBytes(int32(config.FetchMinBytes)),
+		kgo.FetchMaxPartitionBytes(int32(config.FetchMaxParitionBytes)),
+
+		kgo.FetchMaxWait(config.FetchMaxWait),
+		kgo.SessionTimeout(config.SessionTimeout),
+		kgo.HeartbeatInterval(config.HeartbeatInternal),
+		kgo.RebalanceTimeout(config.MaxPollInterval),
+		kgo.RequestTimeoutOverhead(config.RequestTimeout),
+
+		kgo.ConsumeResetOffset(config.consumeResetOffset()),
+		kgo.FetchIsolationLevel(kgo.ReadCommitted()),
+	)
 	if err := client.Ping(context.Background()); err != nil {
-		panic(fmt.Errorf("failed when kafka consumer group ping [%s]: %v", config.key, err))
+		panic(fmt.Errorf("failed when kafka consumer group ping [%s]: %v", opt.key, err))
 	}
 
 	return &consumerGroup{
@@ -109,4 +126,71 @@ func (c *consumerGroup) Consume(l logger.Logger, fn pubsub.HandlerFunc, closeFun
 	})
 
 	l.Info("consumer shutdown")
+}
+
+var defaultConsumerConfig = ConsumerConfig{
+	FetchMaxBytes:         0,
+	FetchMinBytes:         0,
+	FetchMaxParitionBytes: 0,
+	FetchMaxWait:          0,
+	SessionTimeout:        0,
+	HeartbeatInternal:     0,
+	MaxPollInterval:       0,
+	RequestTimeout:        0,
+	ConsumeResetOffset:    "end",
+}
+
+func checkingConsumerConfig(config ConsumerConfig) ConsumerConfig {
+	cfg := defaultConsumerConfig
+	cfg.Broker = config.Broker
+	cfg.Topic = config.Topic
+	cfg.ConsumerGroup = config.ConsumerGroup
+	cfg.Cert = config.Cert
+
+	if config.FetchMaxBytes > 0 {
+		cfg.FetchMaxBytes = config.FetchMaxBytes
+	}
+
+	if config.FetchMinBytes > 0 {
+		cfg.FetchMinBytes = config.FetchMinBytes
+	}
+
+	if config.FetchMaxParitionBytes > 0 {
+		cfg.FetchMaxParitionBytes = config.FetchMaxParitionBytes
+	}
+
+	if config.FetchMaxWait > 0 {
+		cfg.FetchMaxWait = config.FetchMaxWait
+	}
+
+	if config.SessionTimeout > 0 {
+		cfg.SessionTimeout = config.SessionTimeout
+	}
+
+	if config.HeartbeatInternal > 0 {
+		cfg.HeartbeatInternal = config.HeartbeatInternal
+	}
+
+	if config.MaxPollInterval > 0 {
+		cfg.MaxPollInterval = config.MaxPollInterval
+	}
+
+	if config.RequestTimeout > 0 {
+		cfg.RequestTimeout = config.RequestTimeout
+	}
+
+	if config.ConsumeResetOffset != "" {
+		cfg.ConsumeResetOffset = config.ConsumeResetOffset
+	}
+
+	return cfg
+}
+
+func (c ConsumerConfig) consumeResetOffset() kgo.Offset {
+	switch c.ConsumeResetOffset {
+	case "start":
+		return kgo.NewOffset().AtStart()
+	default:
+		return kgo.NewOffset().AtEnd()
+	}
 }

@@ -23,19 +23,19 @@ type Producer struct {
 }
 
 func NewProducer(options ...Option) pubsub.Producer {
-	var config Config
+	var (
+		opt    OptionConfig
+		config ProducerConfig
+	)
 	for _, option := range options {
-		option.apply(&config)
+		option.apply(&opt)
 	}
 
-	if err := viper.UnmarshalKey(config.key, &config); err != nil {
-		panic(fmt.Errorf("failed when kafka new producer viper.UnmarshalKey [%s]: %v", config.key, err))
+	if err := viper.UnmarshalKey(opt.key, &config); err != nil {
+		panic(fmt.Errorf("failed when kafka new producer viper.UnmarshalKey [%s]: %v", opt.key, err))
 	}
 
-	if config.Broker == "" {
-		fmt.Println(`new producer config.Broker is ""`)
-		return nil
-	}
+	config = checkingProducerConfig(config)
 
 	var tls *tls.Config
 	var err error
@@ -46,18 +46,26 @@ func NewProducer(options ...Option) pubsub.Producer {
 		tls, err = cryptos.NewTLSConfigFromFile(config.Cert.Cert, config.Cert.Key, config.Cert.CA)
 	}
 	if err != nil {
-		panic(fmt.Errorf("failed when kafka new consumer group tls config [%s]: %v", config.key, err))
+		panic(fmt.Errorf("failed when kafka new consumer group tls config [%s]: %v", opt.key, err))
 	}
 
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(config.Broker),
 		kgo.DialTLSConfig(tls),
 		kgo.DefaultProduceTopic(config.Topic),
-		kgo.RequiredAcks(kgo.AllISRAcks()),
-	)
 
+		kgo.ProducerBatchMaxBytes(int32(config.BatchSize)),
+		kgo.MaxBufferedRecords(config.MaxBufferRecords),
+		kgo.ProducerBatchCompression(kgo.Lz4Compression()),
+
+		kgo.RequiredAcks(kgo.AllISRAcks()),
+
+		kgo.ProduceRequestTimeout(config.RequestTimeout),
+		kgo.RecordDeliveryTimeout(config.DeliveryTimeout),
+		kgo.RetryBackoffFn(jitteredBackoff),
+	)
 	if err := client.Ping(context.Background()); err != nil {
-		panic(fmt.Errorf("failed when kafka producer ping [%s]: %v", config.key, err))
+		panic(fmt.Errorf("failed when kafka producer ping [%s]: %v", opt.key, err))
 	}
 
 	return &Producer{
@@ -102,4 +110,41 @@ func (p *Producer) Shutdown(l logger.Logger) error {
 		p.Client.Close()
 	})
 	return nil
+}
+
+var defaultProducerConfig = ProducerConfig{
+	BatchSize:        1048576,
+	MaxBufferRecords: 10000,
+	Linger:           10 * time.Millisecond,
+	RequestTimeout:   60 * time.Second,
+	DeliveryTimeout:  180 * time.Second,
+}
+
+func checkingProducerConfig(config ProducerConfig) ProducerConfig {
+	var cfg = &defaultProducerConfig
+	cfg.Broker = config.Broker
+	cfg.Topic = config.Topic
+	cfg.Cert = config.Cert
+
+	if config.BatchSize > 0 {
+		cfg.BatchSize = config.BatchSize
+	}
+
+	if config.MaxBufferRecords > 0 {
+		cfg.MaxBufferRecords = config.MaxBufferRecords
+	}
+
+	if config.Linger > 0 {
+		cfg.Linger = config.Linger
+	}
+
+	if config.RequestTimeout > 0 {
+		cfg.RequestTimeout = config.RequestTimeout
+	}
+
+	if config.DeliveryTimeout > 0 {
+		cfg.DeliveryTimeout = config.DeliveryTimeout
+	}
+
+	return *cfg
 }

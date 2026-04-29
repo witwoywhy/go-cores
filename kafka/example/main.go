@@ -25,18 +25,18 @@ func main() {
 	wg.Go(func() {
 		c.Consume(logs.L, func(ctx context.Context, topic, group, key string, value []byte) bool {
 			fmt.Println("")
-			fmt.Println(string(value))
+			fmt.Println(key, string(value))
 			fmt.Println("")
 			return true
 		}, func() {})
 	})
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 	p := kafka.NewProducer(
 		kafka.AddConfigKey("pubsub.pub"),
 		kafka.AddLogger(logs.L),
 	)
-	fmt.Println(p.Produce("AAA", "HELLO FROM PUB", logs.L))
+	fmt.Println(p.Produce(time.Now().Format(time.RFC3339Nano), "HELLO FROM PUB", logs.L))
 
 	wg.Wait()
 }

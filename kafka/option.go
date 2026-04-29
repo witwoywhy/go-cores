@@ -2,16 +2,16 @@ package kafka
 
 import "github.com/witwoywhy/go-cores/logger"
 
-type Option interface{ apply(*Config) }
+type Option interface{ apply(*OptionConfig) }
 
-type clientOption struct{ fn func(*Config) }
+type clientOption struct{ fn func(*OptionConfig) }
 
-func (opt clientOption) apply(config *Config) { opt.fn(config) }
+func (opt clientOption) apply(config *OptionConfig) { opt.fn(config) }
 
 func AddConfigKey(key string) Option {
-	return clientOption{func(c *Config) { c.key = key }}
+	return clientOption{func(c *OptionConfig) { c.key = key }}
 }
 
 func AddLogger(l logger.Logger) Option {
-	return clientOption{func(c *Config) { c.l = l }}
+	return clientOption{func(c *OptionConfig) { c.l = l }}
 }
