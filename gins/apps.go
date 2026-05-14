@@ -21,8 +21,8 @@ import (
 type GinApps interface {
 	Register(method string, relativePath string, handlers ...gin.HandlerFunc)
 	UseMiddleware(middleware ...gin.HandlerFunc)
-	WithParseRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc
-	WithParseLogger(handle HandleWithLogger) gin.HandlerFunc
+	WithRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc
+	WithLogger(handle HandleWithLogger) gin.HandlerFunc
 	ListenAndServe(closeFunc func())
 
 	// middleware
@@ -113,7 +113,7 @@ func (a *app) UseMiddleware(middleware ...gin.HandlerFunc) {
 	a.gin.Use(middleware...)
 }
 
-func (a *app) WithParseLogger(handle HandleWithLogger) gin.HandlerFunc {
+func (a *app) WithLogger(handle HandleWithLogger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		l := NewLogFromCtx(ctx)
 
@@ -126,7 +126,7 @@ const (
 	rctxNotFound = "route context not found"
 )
 
-func (a *app) WithParseRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc {
+func (a *app) WithRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var l logger.Logger
 
