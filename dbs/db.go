@@ -24,12 +24,16 @@ type DbConfig struct {
 func (d *DbConfig) ToDSN() string {
 	switch d.Driver {
 	case Pg:
-		if d.DSN == "" {
+		if d.DSN != "" {
 			return d.DSN
 		}
 
 		return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", d.Username, d.Password, d.Host, d.Port, d.Database)
 	case Mysql:
+		if d.DSN != "" {
+			return d.DSN
+		}
+
 		return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", d.Username, d.Password, d.Host, d.Port, d.Database)
 	default:
 		panic("failed to get db DSN")
