@@ -8,14 +8,15 @@ db:
     password: root
     database: witwoywhy
     timeout: 1m
-    readTimeout: 1m
-    writeTimeout: 1m
-    maxIdleConns: 1
-    maxConns: 5
-    maxLifeTime: 1h
+    read_timeout: 1m
+    write_timeout: 1m
+    max_idle_conns: 1
+    max_conns: 5
+    max_life_time: 1h
   pg:
     driver: pg
     dsn: postgres://root:root@localhost:5432/witwoywhy
-    maxIdleConns: 1
-    maxConns: 5
-    maxLifeTime: 1h
+    timeout: 1m
+    max_idle_conns: 1
+    max_conns: 5
+    max_life_time: 1h

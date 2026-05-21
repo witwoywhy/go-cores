@@ -2,6 +2,8 @@ package dbs
 
 import (
 	"fmt"
+	"math"
+	"net/url"
 	"time"
 )
 
@@ -23,12 +25,12 @@ type DbConfig struct {
 
 func (d *DbConfig) ToDSN() string {
 	switch d.Driver {
-	case Pg:
+	case Pg, Postgres:
 		if d.DSN != "" {
-			return d.DSN
+			return d.postgresDSN(d.DSN)
 		}
 
-		return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", d.Username, d.Password, d.Host, d.Port, d.Database)
+		return d.postgresDSN(fmt.Sprintf("postgres://%s:%s@%s:%s/%s", d.Username, d.Password, d.Host, d.Port, d.Database))
 	case Mysql:
 		if d.DSN != "" {
 			return d.DSN
@@ -38,4 +40,29 @@ func (d *DbConfig) ToDSN() string {
 	default:
 		panic("failed to get db DSN")
 	}
+}
+
+func (d *DbConfig) postgresDSN(dsn string) string {
+	if d.Timeout <= 0 {
+		return dsn
+	}
+
+	u, err := url.Parse(dsn)
+	if err != nil || u.Scheme == "" {
+		return dsn
+	}
+
+	q := u.Query()
+	if q.Has("connect_timeout") {
+		return dsn
+	}
+
+	q.Set("connect_timeout", fmt.Sprintf("%d", postgresConnectTimeoutSeconds(d.Timeout)))
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}
+
+func postgresConnectTimeoutSeconds(timeout time.Duration) int {
+	return int(math.Ceil(timeout.Seconds()))
 }

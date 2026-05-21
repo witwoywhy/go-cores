@@ -1,8 +1,10 @@
 package gorms
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	mysqld "github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
@@ -21,7 +23,7 @@ func Init(key string) *gorm.DB {
 	var gormDb *gorm.DB
 	var err error
 	switch strings.ToLower(config.Driver) {
-	case dbs.Pg:
+	case dbs.Pg, dbs.Postgres:
 		gormDb, err = gorm.Open(postgres.New(postgres.Config{DSN: config.ToDSN()}))
 	case dbs.Mysql:
 		mysqlConfig := mysql.Config{}
@@ -51,8 +53,7 @@ func Init(key string) *gorm.DB {
 		panic(fmt.Errorf("failed to get db %s: %v", key, err))
 	}
 
-	err = db.Ping()
-	if err != nil {
+	if err = ping(db, config.Timeout); err != nil {
 		panic(fmt.Errorf("failed to ping db %s: %v", key, err))
 	}
 
@@ -61,4 +62,18 @@ func Init(key string) *gorm.DB {
 	db.SetConnMaxLifetime(config.MaxLifeTime)
 
 	return gormDb
+}
+
+func ping(db interface {
+	Ping() error
+	PingContext(context.Context) error
+}, timeout time.Duration) error {
+	if timeout <= 0 {
+		return db.Ping()
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	return db.PingContext(ctx)
 }
