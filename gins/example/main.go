@@ -17,7 +17,7 @@ func init() {
 }
 
 func main() {
-	app := gins.New()
+	app := gins.New[contexts.RouteContext]()
 
 	app.UseMiddleware(app.Log())
 	app.UseMiddleware(app.Error())

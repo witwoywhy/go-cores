@@ -11,17 +11,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/errs"
 	httpserve "github.com/witwoywhy/go-cores/http-serve"
 	"github.com/witwoywhy/go-cores/logger"
 	"github.com/witwoywhy/go-cores/logs"
 )
 
-type GinApps interface {
+type App[RouteContext any] interface {
 	Register(method string, relativePath string, handlers ...gin.HandlerFunc)
 	UseMiddleware(middleware ...gin.HandlerFunc)
-	WithRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc
+	WithRouteContext(handle HandleWithRouteContextLogger[RouteContext]) gin.HandlerFunc
 	WithLogger(handle HandleWithLogger) gin.HandlerFunc
 	ListenAndServe(closeFunc func())
 
@@ -30,7 +29,7 @@ type GinApps interface {
 	Error() gin.HandlerFunc
 }
 
-type app struct {
+type app[RouteContext any] struct {
 	gin *gin.Engine
 
 	config        httpserve.HTTPServe
@@ -38,13 +37,13 @@ type app struct {
 	errorMapping  errs.ErrorCodeMapping
 }
 
-func New() GinApps {
+func New[RouteContext any]() App[RouteContext] {
 	var config httpserve.HTTPServe
 	if err := viper.UnmarshalKey("http_serve", &config); err != nil {
 		panic(fmt.Errorf("failed to loaded [http_serve] config: %v", err))
 	}
 
-	a := &app{
+	a := &app[RouteContext]{
 		gin:           gin.New(),
 		config:        config,
 		ignoreLogBody: map[string]bool{},
@@ -58,7 +57,7 @@ func New() GinApps {
 	return a
 }
 
-func (a *app) ListenAndServe(closeFunc func()) {
+func (a *app[RouteContext]) ListenAndServe(closeFunc func()) {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", a.config.Port),
 		Handler: a.gin,
@@ -94,7 +93,7 @@ func (a *app) ListenAndServe(closeFunc func()) {
 	logs.L.Info("service shutdown")
 }
 
-func (a *app) Register(method string, relativePath string, handlers ...gin.HandlerFunc) {
+func (a *app[RouteContext]) Register(method string, relativePath string, handlers ...gin.HandlerFunc) {
 	switch method {
 	case http.MethodGet:
 		a.gin.GET(relativePath, handlers...)
@@ -109,11 +108,11 @@ func (a *app) Register(method string, relativePath string, handlers ...gin.Handl
 	}
 }
 
-func (a *app) UseMiddleware(middleware ...gin.HandlerFunc) {
+func (a *app[RouteContext]) UseMiddleware(middleware ...gin.HandlerFunc) {
 	a.gin.Use(middleware...)
 }
 
-func (a *app) WithLogger(handle HandleWithLogger) gin.HandlerFunc {
+func (a *app[RouteContext]) WithLogger(handle HandleWithLogger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		l := NewLogFromCtx(ctx)
 
@@ -122,11 +121,12 @@ func (a *app) WithLogger(handle HandleWithLogger) gin.HandlerFunc {
 }
 
 const (
-	rctx         = "rctx"
-	rctxNotFound = "route context not found"
+	rctx            = "rctx"
+	rctxNotFound    = "route context not found"
+	rctxInvalidType = "route context invalid type"
 )
 
-func (a *app) WithRouteContext(handle HandleWithRouteContextLogger) gin.HandlerFunc {
+func (a *app[RouteContext]) WithRouteContext(handle HandleWithRouteContextLogger[RouteContext]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var l logger.Logger
 
@@ -140,18 +140,27 @@ func (a *app) WithRouteContext(handle HandleWithRouteContextLogger) gin.HandlerF
 		routeContext, ok := ctx.Get(rctx)
 		if !ok {
 			l.Error("rctx not found")
-			ctx.Error(errs.NewCustom(http.StatusInternalServerError, errs.Err50000, rctxNotFound, ""))
+			ctx.Error(errs.NewCustom(http.StatusInternalServerError, errs.Err5000500, rctxNotFound, ""))
 			ctx.Abort()
+			return
 		}
 
-		handle(ctx, routeContext.(*contexts.RouteContext), l)
+		typedRouteContext, ok := routeContext.(*RouteContext)
+		if !ok {
+			l.Error("rctx invalid type")
+			ctx.Error(errs.NewCustom(http.StatusInternalServerError, errs.Err5000500, rctxInvalidType, ""))
+			ctx.Abort()
+			return
+		}
+
+		handle(ctx, typedRouteContext, l)
 	}
 }
 
-func (a *app) Error() gin.HandlerFunc {
+func (a *app[RouteContext]) Error() gin.HandlerFunc {
 	return Error(a.errorMapping)
 }
 
-func (a *app) Log() gin.HandlerFunc {
+func (a *app[RouteContext]) Log() gin.HandlerFunc {
 	return Log(a.ignoreLogBody)
 }
