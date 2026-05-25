@@ -1,0 +1,19 @@
+app:
+  name: example
+  env: dev
+
+http_serve:
+  port: 8080
+  ignore_log_body:
+    - /v1/health
+  error_code_mapping: |
+    {
+      "40000": {
+          "th": {
+              "message": "กรุณากรอก {{ field }} ให้ครบถ้วน"
+          },
+          "en": {
+              "message": "{{ field }} is required."
+          }
+      }
+    }
