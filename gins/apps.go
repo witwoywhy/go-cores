@@ -19,6 +19,7 @@ import (
 
 type App[RouteContext any] interface {
 	Register(method string, relativePath string, handlers ...gin.HandlerFunc)
+	Group(prefix string, handlers ...gin.HandlerFunc) Group
 	UseMiddleware(middleware ...gin.HandlerFunc)
 	WithRouteContext(handle HandleWithRouteContextLogger[RouteContext]) gin.HandlerFunc
 	WithLogger(handle HandleWithLogger) gin.HandlerFunc
@@ -27,6 +28,12 @@ type App[RouteContext any] interface {
 	// middleware
 	Log() gin.HandlerFunc
 	Error() gin.HandlerFunc
+}
+
+type Group interface {
+	Register(method string, relativePath string, handlers ...gin.HandlerFunc)
+	Group(prefix string, handlers ...gin.HandlerFunc) Group
+	UseMiddleware(middleware ...gin.HandlerFunc)
 }
 
 type app[RouteContext any] struct {
@@ -108,6 +115,10 @@ func (a *app[RouteContext]) Register(method string, relativePath string, handler
 	}
 }
 
+func (a *app[RouteContext]) Group(prefix string, handlers ...gin.HandlerFunc) Group {
+	return &group{group: a.gin.Group(prefix, handlers...)}
+}
+
 func (a *app[RouteContext]) UseMiddleware(middleware ...gin.HandlerFunc) {
 	a.gin.Use(middleware...)
 }
@@ -163,4 +174,31 @@ func (a *app[RouteContext]) Error() gin.HandlerFunc {
 
 func (a *app[RouteContext]) Log() gin.HandlerFunc {
 	return Log(a.ignoreLogBody)
+}
+
+type group struct {
+	group *gin.RouterGroup
+}
+
+func (g *group) Register(method string, relativePath string, handlers ...gin.HandlerFunc) {
+	switch method {
+	case http.MethodGet:
+		g.group.GET(relativePath, handlers...)
+	case http.MethodPost:
+		g.group.POST(relativePath, handlers...)
+	case http.MethodPatch:
+		g.group.PATCH(relativePath, handlers...)
+	case http.MethodPut:
+		g.group.PUT(relativePath, handlers...)
+	case http.MethodDelete:
+		g.group.DELETE(relativePath, handlers...)
+	}
+}
+
+func (g *group) Group(prefix string, handlers ...gin.HandlerFunc) Group {
+	return &group{group: g.group.Group(prefix, handlers...)}
+}
+
+func (g *group) UseMiddleware(middleware ...gin.HandlerFunc) {
+	g.group.Use(middleware...)
 }

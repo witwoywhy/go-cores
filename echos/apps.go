@@ -19,6 +19,7 @@ import (
 
 type App[RouteContext any] interface {
 	Register(method string, relativePath string, handlers ...echo.HandlerFunc)
+	Group(prefix string, middleware ...echo.MiddlewareFunc) Group
 	UseMiddleware(middleware ...echo.MiddlewareFunc)
 	WithRouteContext(handle HandleWithRouteContextLogger[RouteContext]) echo.HandlerFunc
 	WithLogger(handle HandleWithLogger) echo.HandlerFunc
@@ -27,6 +28,12 @@ type App[RouteContext any] interface {
 	// middleware
 	Log() echo.MiddlewareFunc
 	Error() echo.MiddlewareFunc
+}
+
+type Group interface {
+	Register(method string, relativePath string, handlers ...echo.HandlerFunc)
+	Group(prefix string, middleware ...echo.MiddlewareFunc) Group
+	UseMiddleware(middleware ...echo.MiddlewareFunc)
 }
 
 type app[RouteContext any] struct {
@@ -108,6 +115,10 @@ func (a *app[RouteContext]) Register(method string, relativePath string, handler
 	}
 }
 
+func (a *app[RouteContext]) Group(prefix string, middleware ...echo.MiddlewareFunc) Group {
+	return &group{group: a.echo.Group(prefix, middleware...)}
+}
+
 func (a *app[RouteContext]) UseMiddleware(middleware ...echo.MiddlewareFunc) {
 	a.echo.Use(middleware...)
 }
@@ -161,4 +172,31 @@ func (a *app[RouteContext]) Error() echo.MiddlewareFunc {
 
 func (a *app[RouteContext]) Log() echo.MiddlewareFunc {
 	return Log(a.ignoreLogBody)
+}
+
+type group struct {
+	group *echo.Group
+}
+
+func (g *group) Register(method string, relativePath string, handlers ...echo.HandlerFunc) {
+	switch method {
+	case http.MethodGet:
+		g.group.GET(relativePath, handlers[0])
+	case http.MethodPost:
+		g.group.POST(relativePath, handlers[0])
+	case http.MethodPatch:
+		g.group.PATCH(relativePath, handlers[0])
+	case http.MethodPut:
+		g.group.PUT(relativePath, handlers[0])
+	case http.MethodDelete:
+		g.group.DELETE(relativePath, handlers[0])
+	}
+}
+
+func (g *group) Group(prefix string, middleware ...echo.MiddlewareFunc) Group {
+	return &group{group: g.group.Group(prefix, middleware...)}
+}
+
+func (g *group) UseMiddleware(middleware ...echo.MiddlewareFunc) {
+	g.group.Use(middleware...)
 }
