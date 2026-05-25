@@ -3,10 +3,10 @@ package logs
 import (
 	"fmt"
 	"log/slog"
-	"os"
 	"strings"
 
 	"github.com/spf13/viper"
+	"github.com/witwoywhy/go-cores/logger"
 	"github.com/witwoywhy/go-cores/tracers"
 )
 
@@ -47,24 +47,22 @@ func Init(options ...LogConfigOption) {
 		Config.IsEnableTracer = true
 	}
 
-	producer = configOption.producer
-	if producer == nil {
-		SL = slog.New(NewJsonHandler(
-			viper.GetString("app.name"),
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: level,
-			},
-		))
+	var writer logger.Writer
+	if configOption.producer == nil {
+		writer = &stdoutWriter{}
 	} else {
-		SL = slog.New(NewProducerHandler(
+		writer = &producerWriter{producer: configOption.producer}
+	}
+
+	SL = slog.New(
+		NewJsonHandler(
 			viper.GetString("app.name"),
-			producer,
+			writer,
 			&slog.HandlerOptions{
 				Level: level,
 			},
-		))
-	}
+		),
+	)
 }
 
 func Shutdown() {

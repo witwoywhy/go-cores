@@ -2,7 +2,6 @@ package logs
 
 import (
 	"log/slog"
-	"os"
 
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
@@ -14,7 +13,7 @@ var (
 	SL *slog.Logger = slog.New(
 		NewJsonHandler(
 			viper.GetString("app.name"),
-			os.Stdout,
+			&stdoutWriter{},
 			&slog.HandlerOptions{
 				Level: slog.LevelInfo,
 			},

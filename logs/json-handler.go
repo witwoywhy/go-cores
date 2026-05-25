@@ -3,28 +3,29 @@ package logs
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"log"
 	"log/slog"
+	"os"
 	"time"
+
+	"github.com/witwoywhy/go-cores/logger"
 )
 
-type JsonHandler struct {
+type jsonHandler struct {
 	slog.Handler
-	l *log.Logger
+	writer logger.Writer
 
 	addServiceNameFunc func(fields map[string]any)
 }
 
 func NewJsonHandler(
 	serviceName string,
-	out io.Writer,
+	writer logger.Writer,
 	options *slog.HandlerOptions,
 
-) *JsonHandler {
-	handler := &JsonHandler{
-		Handler: slog.NewJSONHandler(out, options),
-		l:       log.New(out, "", 0),
+) *jsonHandler {
+	handler := &jsonHandler{
+		Handler: slog.NewJSONHandler(os.Stdout, options),
+		writer:  writer,
 	}
 
 	if serviceName == "" {
@@ -38,7 +39,11 @@ func NewJsonHandler(
 	return handler
 }
 
-func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
+func (h *jsonHandler) addServiceName(fields map[string]any) {
+	h.addServiceNameFunc(fields)
+}
+
+func (h *jsonHandler) Handle(ctx context.Context, r slog.Record) error {
 	fields := make(map[string]any, 3+r.NumAttrs())
 	fields["timestamp"] = r.Time.UnixNano()
 	fields["datetime"] = r.Time.Format(time.RFC3339Nano)
@@ -69,15 +74,6 @@ func (h *JsonHandler) Handle(ctx context.Context, r slog.Record) error {
 		return true
 	})
 
-	b, err := json.Marshal(fields)
-	if err != nil {
-		return err
-	}
-
-	h.l.Println(string(b))
+	h.writer.Write(fields, L)
 	return nil
-}
-
-func (h *JsonHandler) addServiceName(fields map[string]any) {
-	h.addServiceNameFunc(fields)
 }
