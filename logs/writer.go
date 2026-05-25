@@ -2,7 +2,7 @@ package logs
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 
 	"github.com/witwoywhy/go-cores/apps"
 	"github.com/witwoywhy/go-cores/logger"
@@ -14,7 +14,7 @@ type stdoutWriter struct{}
 func (w *stdoutWriter) Write(fields map[string]any, l logger.Logger) {
 	b, err := json.Marshal(fields)
 	if err == nil {
-		log.Println(string(b))
+		fmt.Println(string(b))
 	}
 }
 
