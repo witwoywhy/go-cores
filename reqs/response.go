@@ -1,10 +1,16 @@
 package reqs
 
-import "github.com/witwoywhy/req"
+import (
+	"net/http"
+
+	"github.com/witwoywhy/req"
+)
 
 type Response interface {
 	IsErrorState() bool
 	Error() error
+	HTTPStatus() int
+	Header() http.Header
 }
 
 type response struct {
@@ -17,4 +23,12 @@ func (r response) Error() error {
 
 func (r response) IsErrorState() bool {
 	return r.response.IsErrorState()
+}
+
+func (r response) HTTPStatus() int {
+	return r.response.GetStatusCode()
+}
+
+func (r response) Header() http.Header {
+	return r.response.Header
 }
