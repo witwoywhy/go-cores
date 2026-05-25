@@ -46,6 +46,15 @@ func main() {
 		}),
 	)
 
+	g := app.Group("/v1")
+	g.Register(
+		http.MethodGet,
+		"/logger",
+		app.WithLogger(func(ctx *gin.Context, l logger.Logger) {
+			l.Info("HANDLE WITH LOGGER")
+		}),
+	)
+
 	app.ListenAndServe(func() {
 		fmt.Println("execute close func")
 	})
