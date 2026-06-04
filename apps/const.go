@@ -36,6 +36,8 @@ const (
 	Authorization = "Authorization"
 	TraceID       = "trace_id"
 	SpanID        = "span_id"
+	TraceIDHeader = "Trace-Id"
+	SpanIDHeader  = "Span-Id"
 
 	Rctx     = "rctx"
 	Logger   = "logger"

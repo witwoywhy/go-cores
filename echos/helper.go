@@ -24,8 +24,8 @@ func getIDByKey(key string, ctx *echo.Context) string {
 
 func NewLogFromCtx(ctx *echo.Context) logger.Logger {
 	return logs.New(map[string]any{
-		apps.TraceID: getIDByKey(apps.TraceID, ctx),
-		apps.SpanID:  getIDByKey(apps.SpanID, ctx),
+		apps.TraceID: getIDByKey(apps.TraceIDHeader, ctx),
+		apps.SpanID:  getIDByKey(apps.SpanIDHeader, ctx),
 	})
 }
 
@@ -40,8 +40,8 @@ func NewRequestLog(
 	tcCtx, span := tracers.Tracer.Trace.Start(ctx.Request().Context(), url)
 
 	var (
-		traceID = ctx.Request().Header.Get(apps.TraceID)
-		spanID  = ctx.Request().Header.Get(apps.SpanID)
+		traceID = ctx.Request().Header.Get(apps.TraceIDHeader)
+		spanID  = ctx.Request().Header.Get(apps.SpanIDHeader)
 	)
 
 	if traceID == "" {
@@ -54,8 +54,8 @@ func NewRequestLog(
 
 	span.SetAttributes(attribute.String(apps.TraceID, traceID))
 	span.SetAttributes(attribute.String(apps.SpanID, spanID))
-	ctx.Set(apps.TraceID, traceID)
-	ctx.Set(apps.SpanID, spanID)
+	ctx.Set(apps.TraceIDHeader, traceID)
+	ctx.Set(apps.SpanIDHeader, spanID)
 
 	l := &logs.Log{
 		Information: map[string]any{

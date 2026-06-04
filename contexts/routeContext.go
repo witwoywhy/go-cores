@@ -1,7 +1,8 @@
 package contexts
 
 type RouteContext struct {
-	UserRefId string
+	UserID    string
+	UserRefID string
 
 	Header
 }
