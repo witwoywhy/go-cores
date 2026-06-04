@@ -25,7 +25,7 @@ func main() {
 	app.Register(
 		http.MethodGet,
 		"/logger",
-		app.WithLogger(func(ctx *gin.Context, l logger.Logger) {
+		app.WithLogger(func(ctx *gin.Context, rctx *contexts.RouteContext, l logger.Logger) {
 			l.Info("HANDLE WITH LOGGER")
 		}),
 	)
@@ -41,7 +41,7 @@ func main() {
 	app.Register(
 		http.MethodGet,
 		"/400",
-		app.WithLogger(func(ctx *gin.Context, l logger.Logger) {
+		app.WithLogger(func(ctx *gin.Context, rctx *contexts.RouteContext, l logger.Logger) {
 			ctx.Error(errs.NewBadRequestError())
 		}),
 	)
@@ -50,7 +50,7 @@ func main() {
 	g.Register(
 		http.MethodGet,
 		"/logger",
-		app.WithLogger(func(ctx *gin.Context, l logger.Logger) {
+		app.WithLogger(func(ctx *gin.Context, rctx *contexts.RouteContext, l logger.Logger) {
 			l.Info("HANDLE WITH LOGGER")
 		}),
 	)

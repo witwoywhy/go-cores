@@ -33,7 +33,7 @@ func getUser(l logger.Logger) {
 	var err Error
 
 	resp := client.Request(l).
-		SetHeader("X-Api-Key", client.Config().ApiKey).
+		SetHeader("X-Api-Key", client.Config().Addtional["api_key"]).
 		SetPathParam("id", "001").
 		SetResult(&response).
 		SetError(&err).

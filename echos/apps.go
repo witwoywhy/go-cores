@@ -11,6 +11,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/spf13/viper"
+	"github.com/witwoywhy/go-cores/contexts"
 	"github.com/witwoywhy/go-cores/errs"
 	httpserve "github.com/witwoywhy/go-cores/http-serve"
 	"github.com/witwoywhy/go-cores/logger"
@@ -127,7 +128,13 @@ func (a *app[RouteContext]) WithLogger(handle HandleWithLogger) echo.HandlerFunc
 	return func(ctx *echo.Context) error {
 		l := NewLogFromCtx(ctx)
 
-		handle(ctx, l)
+		rctx := &contexts.RouteContext{Ctx: ctx.Request().Context()}
+		if err := echo.BindHeaders(ctx, &rctx); err != nil {
+			l.Errorf("failed when bind header: %v", err)
+			return errs.NewBadRequestError()
+		}
+
+		handle(ctx, rctx, l)
 		return nil
 	}
 }

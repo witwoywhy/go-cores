@@ -25,7 +25,7 @@ func main() {
 	app.Register(
 		http.MethodGet,
 		"/logger",
-		app.WithLogger(func(ctx *echo.Context, l logger.Logger) {
+		app.WithLogger(func(ctx *echo.Context, rctx *contexts.RouteContext, l logger.Logger) {
 			l.Info("HANDLE WITH LOGGER")
 			ctx.JSON(http.StatusOK, "hello")
 		}),
