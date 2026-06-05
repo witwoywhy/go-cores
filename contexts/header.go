@@ -6,8 +6,11 @@ type Header struct {
 	Authorization string `header:"Authorization"`
 
 	RequestID string `header:"X-Request-Id"`
-	TraceID   string `header:"Trace-Id"`
-	SpanID    string `header:"Span-Id"`
+	ClientID  string `header:"X-Client-Id"`
 
-	Language language.Language `header:"Accept-Language"`
+	TraceID string `header:"Trace-Id"`
+	SpanID  string `header:"Span-Id"`
+
+	UserAgent string            `header:"User-Agent"`
+	Language  language.Language `header:"Accept-Language"`
 }
