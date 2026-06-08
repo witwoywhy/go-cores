@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/witwoywhy/go-cores/contexts"
@@ -57,6 +58,15 @@ func New[RouteContext any]() App[RouteContext] {
 		ignoreLogBody: map[string]bool{},
 		errorMapping:  errs.ParseToErrorCodeMapping(config.ErrorCodeMapping, logs.L),
 	}
+
+	a.UseMiddleware(cors.New(cors.Config{
+		AllowOrigins:     a.config.CORS.AllowOrigins,
+		AllowMethods:     a.config.CORS.AllowMethods,
+		AllowHeaders:     a.config.CORS.AllowHeaders,
+		AllowCredentials: a.config.CORS.AllowCredentials,
+		MaxAge:           a.config.CORS.MaxAge,
+		AllowAllOrigins:  false,
+	}))
 
 	for _, v := range config.IgnoreLogBody {
 		a.ignoreLogBody[v] = true
