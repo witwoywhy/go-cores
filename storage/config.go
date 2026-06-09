@@ -8,9 +8,9 @@ import (
 
 type Config struct {
 	Target     string `mapstructure:"target"`
-	BucketName string `mapstructure:"bucketName"`
+	BucketName string `mapstructure:"bucket_name"`
 	Prefix     string `mapstructure:"prefix"`
-	PublicUrl  string `mapstructure:"publicUrl"`
+	PublicUrl  string `mapstructure:"public_url"`
 	Region     string `mapstructure:"region"`
 	S3Config   `mapstructure:",squash"`
 	BlobConfig `mapstructure:",squash"`
@@ -18,18 +18,18 @@ type Config struct {
 }
 
 type S3Config struct {
-	AccessKey string `mapstructure:"accessKey"`
-	SecretKey string `mapstructure:"secretKey"`
+	AccessKey string `mapstructure:"access_key"`
+	SecretKey string `mapstructure:"secret_key"`
 	Endpoint  string `mapstructure:"endpoint"`
 	Acl       string `mapstructure:"acl"`
 }
 
 type BlobConfig struct {
-	AzureConnection string `mapstructure:"azureConnection"`
+	AzureConnection string `mapstructure:"azure_connection"`
 }
 
 type GcsConfig struct {
-	ServiceAccount string `mapstructure:"serviceAccount"`
+	ServiceAccount string `mapstructure:"service_account"`
 }
 
 func Init(key string) Storager {
